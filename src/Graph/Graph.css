@@ -2,8 +2,8 @@
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	height: calc(var(--height) * 1px);
-	width: calc(var(--width) * 1px);
+	/*height: calc(var(--height) * 1px);
+	width: calc(var(--width) * 1px);*/
 	transform: translate(-50%, -50%);
 	border: 4px solid black;
 }
@@ -18,9 +18,14 @@
 .node {
     position: absolute;
 	border: 2px solid black;
-	border-radius: 100%;
+	fill: white;
+	stroke: black;
+	stroke-width: 2;
+	cursor: pointer;
+
+	/*border-radius: 100%;
 	height: calc(var(--radius) * 2px);
-	width: calc(var(--radius) * 2px);
+	width: calc(var(--radius) * 2px);*/
 }
 
 .arrow{
