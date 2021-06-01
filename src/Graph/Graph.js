@@ -1,6 +1,8 @@
 import "./Graph.css";
 import React, { useState } from "react";
+import {Sidebar} from "./Sidebar"
 
+const LOCKED_MULTIPLIER = 1.2;
 const CONTAINER_HEIGHT = 600;
 const CONTAINER_WIDTH = 1200;
 const NODE_RADIUS = 20;
@@ -10,6 +12,7 @@ const BUFFER = 15;
 
 export function Graph() {
     
+    const [drawGraph, setDrawGraph] = useState(true);
     const [numNodes, setNumNodes] = useState(1);
 	const [nodes, setNodes] = useState([]);
     const [startLineNode, setStartLineNode] = useState(null);
@@ -62,7 +65,7 @@ export function Graph() {
             }
         }
         return angle;
-    }
+    };
 
     //Offset of x,y wrt center of starting node
     const getStartOffsets = (angle) => {
@@ -70,7 +73,7 @@ export function Graph() {
         const start_offsetx = startLineNode.x + start_offset * Math.cos(angle);
         const start_offsety = startLineNode.y - start_offset * Math.sin(angle);
         return [start_offsetx, start_offsety];
-    }
+    };
 
     //Offset x,y wrt center of end node
     const getEndOffsets = (node, angle) => {
@@ -78,7 +81,7 @@ export function Graph() {
         const end_offsetx = node.x - end_offset * Math.cos(angle);
         const end_offsety = node.y + end_offset * Math.sin(angle);
         return [end_offsetx, end_offsety];
-    }
+    };
     
     const handleNodeClicked = (e, node) => {
         if(e.button === 0){ //Only primary click
@@ -140,7 +143,7 @@ export function Graph() {
         else{
             setStartLineNode(null);
         }*/
-    }
+    };
 
     const handleArrowAnimation = (e) => {
         if(startLineNode){
@@ -166,44 +169,79 @@ export function Graph() {
         else if(animationArrow) {
             setAnimationArrow(null);
         }
-    }
+    };
+
+    const toggleDrawGraph = () => {
+        setDrawGraph(!drawGraph);
+    };
 
 	return (
 		<div>
-			<h1 className="header">Draw your Graph</h1> 
-            <svg className="canvas" height={CONTAINER_HEIGHT} width={CONTAINER_WIDTH} onMouseDown={handleAddNode} onMouseMove={handleArrowAnimation}>
-                <defs>
-                    <marker id="markerArrow" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
-                        <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "#000000"}} />
-                    </marker>
-                </defs>
-            <g>
-                {nodes.map((node, i) => (
-                    <g key={i}>
-                        <circle className="node" 
-                                r={NODE_RADIUS} 
-                                cx={node.x} 
-                                cy={node.y}
-                                onMouseDown = {(e) => handleNodeClicked(e, node)}
-                                onMouseEnter = {(e) => handleNodeHover(e, node.id)}
-                                onMouseLeave = {(e) => handleNodeHover(e, node.id)}
-                                style={{fill: startLineNode && startLineNode.id === node.id ? HOVER_BACKGROUND : DEFAULT_BACKGROUND}}
-                        ></circle>
+            <h1 className="header">Draw your Graph</h1> 
+            {drawGraph && 
+                <svg className="canvas" height={CONTAINER_HEIGHT} width={CONTAINER_WIDTH} onMouseDown={handleAddNode} onMouseMove={handleArrowAnimation}>
+                    <defs>
+                        <marker id="markerArrow" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
+                            <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "#000000"}} />
+                        </marker>
+                    </defs>
+                    <g>
+                        {nodes.map((node, i) => (
+                            <g key={i}>
+                                <circle className="node" 
+                                        r={NODE_RADIUS} 
+                                        cx={node.x} 
+                                        cy={node.y}
+                                        onMouseDown = {(e) => handleNodeClicked(e, node)}
+                                        onMouseEnter = {(e) => handleNodeHover(e, node.id)}
+                                        onMouseLeave = {(e) => handleNodeHover(e, node.id)}
+                                        style={{fill: startLineNode && startLineNode.id === node.id ? HOVER_BACKGROUND : DEFAULT_BACKGROUND}}
+                                ></circle>
+                            </g>
+                        ))}
                     </g>
-                ))}
-            </g>
-            <g>
-                {arrows.map((arrow, i) => (
-                    <line x1={arrow.nodex1} y1={arrow.nodey1} x2={arrow.nodex2} y2={arrow.nodey2} className="arrow" key={i}/>
-                    ))}        
-            </g>
-            {animationArrow ? 
-            <g>
-                <line x1={animationArrow.startx} y1={animationArrow.starty} x2={animationArrow.endx} y2={animationArrow.endy} className="arrow"/>   
-            </g>
-                :null
+                    <g>
+                        {arrows.map((arrow, i) => (
+                            <line x1={arrow.nodex1} y1={arrow.nodey1} x2={arrow.nodex2} y2={arrow.nodey2} className="arrow" key={i}/>
+                            ))}        
+                    </g>
+                    {animationArrow ? 
+                    <g>
+                        <line x1={animationArrow.startx} y1={animationArrow.starty} x2={animationArrow.endx} y2={animationArrow.endy} className="arrow"/>   
+                    </g>
+                        :null
+                    }
+                </svg>
             }
-            </svg>            
+            {!drawGraph && 
+                <svg className="canvas-locked" height={LOCKED_MULTIPLIER * CONTAINER_HEIGHT} width={LOCKED_MULTIPLIER * CONTAINER_WIDTH}>
+                    <defs>
+                        <marker id="markerArrow" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
+                            <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "#000000"}} />
+                        </marker>
+                    </defs>
+                    <g>
+                        {nodes.map((node, i) => (
+                            <g key={i}>
+                                <circle className="node" 
+                                        r={NODE_RADIUS} 
+                                        cx={LOCKED_MULTIPLIER * node.x} 
+                                        cy={LOCKED_MULTIPLIER * node.y}
+                                ></circle>
+                            </g>
+                        ))}
+                    </g>
+                    <g>
+                        {arrows.map((arrow, i) => (
+                            <line x1={LOCKED_MULTIPLIER * arrow.nodex1} 
+                                    y1={LOCKED_MULTIPLIER * arrow.nodey1} 
+                                    x2={LOCKED_MULTIPLIER * arrow.nodex2} 
+                                    y2={LOCKED_MULTIPLIER * arrow.nodey2} className="arrow" key={i}/>
+                        ))}
+                    </g>
+                </svg>
+            }
+            <Sidebar lockUnlock={toggleDrawGraph}></Sidebar>       
 		</div>
 	);
 }
