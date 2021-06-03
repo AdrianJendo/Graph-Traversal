@@ -16,11 +16,13 @@ export function Graph() {
     const [numNodes, setNumNodes] = useState(1);
 	const [nodes, setNodes] = useState([]);
     const [startLineNode, setStartLineNode] = useState(null);
+    const [numArrows, setNumArrows] = useState(1);
     const [arrows, setArrows] = useState([]);
     const [animationArrow, setAnimationArrow] = useState(null);
+    const [deleteMode, setDeleteMode] = useState(false);
 
 	const handleAddNode = (e) => {
-        if(e.target.className === "node" || e.button !== 0) return;
+        if(e.target.className === "node" || e.button !== 0 || deleteMode) return;
 
         else if (e.nativeEvent.offsetX < NODE_RADIUS || 
                 e.nativeEvent.offsetY < NODE_RADIUS || 
@@ -46,9 +48,9 @@ export function Graph() {
 	};
 
     //Get angle between nodes
-    const getAngle = (node) => {
-        const x_dist = node.x - startLineNode.x;
-        const y_dist = -1 * (node.y - startLineNode.y); //Vertical distance measured from top = 0 so multiply by -1 to get y positive wrt bottom of canvas
+    const getAngle = (endNode, startNode) => {
+        const x_dist = endNode.x - startNode.x;
+        const y_dist = -1 * (endNode.y - startNode.y); //Vertical distance measured from top = 0 so multiply by -1 to get y positive wrt bottom of canvas
         const angle_ref = x_dist !== 0 ? Math.abs(Math.atan(y_dist / x_dist)) : Math.PI / 2; //reference angle
 
         //Standard angle
@@ -68,10 +70,10 @@ export function Graph() {
     };
 
     //Offset of x,y wrt center of starting node
-    const getStartOffsets = (angle) => {
+    const getStartOffsets = (startNode, angle) => {
         const start_offset = NODE_RADIUS
-        const start_offsetx = startLineNode.x + start_offset * Math.cos(angle);
-        const start_offsety = startLineNode.y - start_offset * Math.sin(angle);
+        const start_offsetx = startNode.x + start_offset * Math.cos(angle);
+        const start_offsety = startNode.y - start_offset * Math.sin(angle);
         return [start_offsetx, start_offsety];
     };
 
@@ -85,15 +87,39 @@ export function Graph() {
     
     const handleNodeClicked = (e, node) => {
         if(e.button === 0){ //Only primary click
-            if(!startLineNode){
+            if(deleteMode){
+                //Remove node from nodes and any connections with node.id at either start or end of link
+                const nodes_copy = nodes.slice();
+                for(let i=0; i<nodes_copy.length; ++i){
+                    if(nodes_copy[i].id === node.id){
+                        nodes_copy.splice(i, 1)
+                        break;
+                    }
+                }
+
+                const arrows_copy = arrows.slice();
+                let i = 0;
+                while(i<arrows_copy.length){
+                    if(arrows_copy[i].startID === node.id || arrows_copy[i].endID === node.id){
+                        arrows_copy.splice(i,1);
+                    }
+                    else{
+                        ++i;
+                    }
+                }
+
+                setNodes(nodes_copy);
+                setArrows(arrows_copy);
+            }
+            else if(!startLineNode){
                 setStartLineNode(node); //Change colour & signal arrow animation
                 return;
             }
             else if(node.id !== startLineNode.id){ //connect nodes with arrows
                 
-                const angle = getAngle(node);
+                const angle = getAngle(node, startLineNode);
                 const arrow_width = 8; //px
-                let [start_offsetx, start_offsety] = getStartOffsets(angle);
+                let [start_offsetx, start_offsety] = getStartOffsets(startLineNode, angle);
                 let [end_offsetx, end_offsety] = getEndOffsets(node, angle);                
                     
                 //Check for overlap of arrows
@@ -114,6 +140,7 @@ export function Graph() {
                     alert("Nodes already connected");
                 }
                 else {
+                    let numLinks = numArrows;
                     if(doubleEdgeNodePair >= 0){ //Calculate required offset adjustmenet for doubly connected nodes
                         start_offsetx += arrow_width * Math.sin(angle);
                         start_offsety += arrow_width * Math.cos(angle);
@@ -124,11 +151,14 @@ export function Graph() {
                                             nodex2: arrows[doubleEdgeNodePair].nodex2 - arrow_width * Math.sin(angle), 
                                             nodey2: arrows[doubleEdgeNodePair].nodey2 - arrow_width * Math.cos(angle),
                                             startID: node.id,
-                                            endID: startLineNode.id
+                                            endID: startLineNode.id,
+                                            id: numLinks
                                         };
                         arrows.splice(doubleEdgeNodePair, 1, replacement); //Replace current line by updated offset
+                        numLinks++;
                     }
-                    setArrows([...arrows, {nodex1:start_offsetx, nodey1:start_offsety, nodex2:end_offsetx, nodey2:end_offsety, startID:startLineNode.id, endID:node.id}]);
+                    setArrows([...arrows, {nodex1:start_offsetx, nodey1:start_offsety, nodex2:end_offsetx, nodey2:end_offsety, startID:startLineNode.id, endID:node.id, id:numLinks}]);
+                    setNumArrows(numLinks+1);
                 }
             }
             setAnimationArrow(null);
@@ -136,13 +166,9 @@ export function Graph() {
         }
     };
     
+    //Check if deletemode and set colour accordingly (do same for links)
     const handleNodeHover = (e, id) => {
-        /*if(e.type === 'mouseenter'){
-            setStartLineNode(id);
-        }
-        else{
-            setStartLineNode(null);
-        }*/
+        /*e.type === 'mouseenter'*/
     };
 
     const handleArrowAnimation = (e) => {
@@ -155,8 +181,8 @@ export function Graph() {
             }
 
             const pointer_coords = {x:e.nativeEvent.offsetX, y:e.nativeEvent.offsetY}
-            const angle = getAngle(pointer_coords);
-            const [start_offsetx, start_offsety] = getStartOffsets(angle);
+            const angle = getAngle(pointer_coords, startLineNode);
+            const [start_offsetx, start_offsety] = getStartOffsets(startLineNode, angle);
             
             const pointer_size = 12;
             const pointerx = pointer_size * Math.cos(angle);
@@ -171,9 +197,55 @@ export function Graph() {
         }
     };
 
+    const toggleDeleteMode = () => {
+        setStartLineNode(null);
+        setDeleteMode(!deleteMode);
+    };
+
+    const handleLinkClick = (link) => {
+        //Handle deleting link
+        if(deleteMode){
+            console.log(arrows, nodes);
+            let connectedNodes = {};
+            const arrows_copy = arrows.slice();
+            for(let i=0; i<arrows_copy.length; ++i){
+                if(arrows_copy[i].id === link.id){
+                    connectedNodes.startID = arrows_copy[i].startID
+                    connectedNodes.endID = arrows_copy[i].endID
+                    arrows_copy.splice(i, 1);
+                    break;
+                }
+            }
+
+            if(connectedNodes){
+                const arrow_width = 8; //px
+                let i_paired_link = 0;
+                while(i_paired_link < arrows_copy.length && !(arrows_copy[i_paired_link].startID === connectedNodes.endID && arrows_copy[i_paired_link].endID === connectedNodes.startID)) {
+                    ++i_paired_link;
+                }
+
+                if(i_paired_link < arrows_copy.length) {
+                    //Offset coordinates but angle is still the same
+                    const endNode = {x:arrows_copy[i_paired_link].nodex2, y:arrows_copy[i_paired_link].nodey2}
+                    const startNode = {x:arrows_copy[i_paired_link].nodex1, y:arrows_copy[i_paired_link].nodey1}
+                    const angle = getAngle(endNode, startNode);
+                    
+                    arrows_copy[i_paired_link].nodex1 -= arrow_width * Math.sin(angle);
+                    arrows_copy[i_paired_link].nodey1 -= arrow_width * Math.cos(angle);
+                    arrows_copy[i_paired_link].nodex2 -= arrow_width * Math.sin(angle);
+                    arrows_copy[i_paired_link].nodey2 -= arrow_width * Math.cos(angle);
+                }
+                setArrows(arrows_copy);
+            }
+        }
+
+        return false;
+    }
+
     const toggleDrawGraph = () => {
         setDrawGraph(!drawGraph);
     };
+
 
 	return (
 		<div>
@@ -202,7 +274,15 @@ export function Graph() {
                     </g>
                     <g>
                         {arrows.map((arrow, i) => (
-                            <line x1={arrow.nodex1} y1={arrow.nodey1} x2={arrow.nodex2} y2={arrow.nodey2} className="arrow" key={i}/>
+                            <line x1={arrow.nodex1} 
+                                y1={arrow.nodey1} 
+                                x2={arrow.nodex2} 
+                                y2={arrow.nodey2} 
+                                className="arrow" 
+                                key={i} 
+                                onClick={() => handleLinkClick(arrow)}
+                                style={deleteMode ? {cursor:"pointer"}:{}}
+                            />
                             ))}        
                     </g>
                     {animationArrow ? 
@@ -241,7 +321,11 @@ export function Graph() {
                     </g>
                 </svg>
             }
-            <Sidebar lockUnlock={toggleDrawGraph}></Sidebar>       
+            <Sidebar drawGraph={drawGraph} 
+                    lockUnlock={toggleDrawGraph}
+                    toggleDeleteMode={toggleDeleteMode}
+                    isDeleteMode={deleteMode}
+            ></Sidebar>       
 		</div>
 	);
 }
