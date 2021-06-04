@@ -36,6 +36,15 @@
 	width: calc(var(--radius) * 2px);*/
 }
 
+.animation-node {
+
+}
+
+.original-node {
+	background-color: gray;
+	opacity: 0.2;
+}
+
 .arrow{
 	stroke:rgb(0,0,0);
 	stroke-width:2; 
