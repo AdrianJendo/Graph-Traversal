@@ -35,7 +35,9 @@
     cursor: pointer;
 }
 
-.panel-element::selection {
+.panel-item::selection, 
+.dropdown-item::selection,  
+.weight-input::selection {
     background: none;
 }
 
@@ -64,7 +66,7 @@
     background: none;
 }
 
-.open {
+.open-rotate {
     animation-name: rotate;
     animation-duration: 0.5s;
     animation-delay: 0;
@@ -78,7 +80,7 @@
   }
 }
 
-.close {
+.close-rotate {
     animation-name: rotate2;
     animation-duration: 0.5s;
     animation-delay: 0;
@@ -126,5 +128,101 @@
     }
     100% {
         width: 0;
+    }
+}
+
+.panel-item, .dropdown-item {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.panel-item-open {
+    animation-name: open-panel-item;
+    animation-duration: 0.5s;
+    animation-delay: 0;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+@keyframes open-panel-item {
+    0% {
+        transform: translateX(-50%);;
+    }
+    100% {
+        transform: translateX(-500%);
+    }
+}
+
+.panel-item-close {
+    animation-name: close-panel-item;
+    animation-duration: 0.5s;
+    animation-delay: 0;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+@keyframes close-panel-item {
+    0% {
+        transform: translateX(-500%);;
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.dropdown-item-open {
+    animation-name: open-dropdown;
+    animation-duration: 0.5s;
+    animation-delay: 0;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+@keyframes open-dropdown {
+    0% {
+        transform: translateX(500%);;
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.dropdown-item-close {
+    animation-name: close-dropdown;
+    animation-duration: 0.5s;
+    animation-delay: 0;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+@keyframes close-dropdown {
+    0% {
+        transform: translateX(-50%);;
+    }
+    100% {
+        transform: translateX(500%);
+    }
+}
+
+.graphTypeSelected {
+    animation-name: highlight-green;
+    animation-duration: 0.5s;
+    animation-delay: 0;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+@keyframes highlight-green {
+    0% {
+        background-color: none;
+    }
+    100% {
+        background-color: green;
     }
 }

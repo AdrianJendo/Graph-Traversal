@@ -23,9 +23,13 @@ export function Graph() {
     const [moveMode, setMoveMode] = useState(false);
     const [animationNode, setAnimationNode] = useState(null);
     const [originalNode, setOriginalNode] = useState(null);
+    const [weighted, setWeighted] = useState(false);
+    const [directed, setDirected] = useState(true);
+
+    const ARROW_WIDTH = weighted ? 11 : 8; //px
 
 	const handleCanvasClicked = (e) => {
-        if(e.target.className === "node" || e.button !== 0 || deleteMode) return;
+        if(e.target.className === "node" || e.button !== 0 || deleteMode || !drawGraph) return;
 
         else if (e.nativeEvent.offsetX < NODE_RADIUS || 
             e.nativeEvent.offsetY < NODE_RADIUS || 
@@ -52,10 +56,10 @@ export function Graph() {
                 for(let i = 0; i<arrows_copy.length; i++){
                     if(!double_connections.includes(arrows_copy[i].id)){
                         if(arrows_copy[i].startID === animationNode.id){
-                            updateMovedNodeLinks(animationNode, findNodeFromID(arrows_copy[i].endID), i, arrows_copy, double_connections); //arrows_copy and double_connections updated in function
+                            updateMovedNodeLinks(animationNode, findNodeFromID(arrows_copy[i].endID, nodes), i, arrows_copy, double_connections, directed); //arrows_copy and double_connections updated in function
                         }
                         else if(arrows_copy[i].endID === animationNode.id){
-                            updateMovedNodeLinks(findNodeFromID(arrows_copy[i].startID), animationNode, i, arrows_copy, double_connections);
+                            updateMovedNodeLinks(findNodeFromID(arrows_copy[i].startID, nodes), animationNode, i, arrows_copy, double_connections, directed);
                         }
                     }
                 }
@@ -73,23 +77,25 @@ export function Graph() {
         }
 	};
 
-    const findNodeFromID = (id) => {
+    const findNodeFromID = (id, nodes) => {
         const valid_nodes = nodes.filter((node) => {
             return node.id === id;
         });
         return valid_nodes[0];
     }
 
-    const updateMovedNodeLinks = (startNode, endNode, index, links, double_connections) => {
+    const updateMovedNodeLinks = (startNode, endNode, index, links, double_connections, directed = true, arrow_width=ARROW_WIDTH, keepWeights=true) => {
         const angle = getAngle(startNode, endNode);
-        const arrow_width = 8; //px
+        //const arrow_width = 11; //px
         let [start_offsetx, start_offsety] = getStartOffsets(startNode, angle);
-        let [end_offsetx, end_offsety] = getEndOffsets(endNode, angle);                
+        let [end_offsetx, end_offsety] = getEndOffsets(endNode, angle, directed);                
             
         let doubleEdgeNodePair = -1; //Look for two nodes connected by two directional edges
-        for(let i = index; i<links.length; ++i){
-            if(startNode.id === links[i].endID && endNode.id === links[i].startID) {  //Mark index of double connected nodes
-                doubleEdgeNodePair = i;
+        if(directed){
+            for(let i = index; i<links.length; ++i){
+                if(startNode.id === links[i].endID && endNode.id === links[i].startID) {  //Mark index of double connected nodes
+                    doubleEdgeNodePair = i;
+                }
             }
         }
 
@@ -109,7 +115,8 @@ export function Graph() {
                                             nodey2: end_offsety2 - arrow_width * Math.cos(angle),
                                             startID: links[doubleEdgeNodePair].startID,
                                             endID: links[doubleEdgeNodePair].endID,
-                                            id: links[doubleEdgeNodePair].id
+                                            id: links[doubleEdgeNodePair].id,
+                                            weight: keepWeights ? links[doubleEdgeNodePair].weight : 1
                                         };
             links.splice(doubleEdgeNodePair, 1, secondLink_replacement); //Replace current line by updated offset
             double_connections.push(secondLink_replacement.id);
@@ -120,7 +127,8 @@ export function Graph() {
                             nodey2: end_offsety,
                             startID: links[index].startID,
                             endID: links[index].endID,
-                            id: links[index].id
+                            id: links[index].id,
+                            weight: keepWeights ? links[index].weight : 1
                         };
         links.splice(index, 1, replacement);
     }
@@ -156,15 +164,15 @@ export function Graph() {
     };
 
     //Offset x,y wrt center of end node
-    const getEndOffsets = (node, angle) => {
-        const end_offset = NODE_RADIUS + 11; //Head of the arrow is 10ish px
+    const getEndOffsets = (node, angle, directed=true) => {
+        const end_offset = directed ? NODE_RADIUS + 11 : NODE_RADIUS; //Head of the arrow is 10ish px
         const end_offsetx = node.x - end_offset * Math.cos(angle);
         const end_offsety = node.y + end_offset * Math.sin(angle);
         return [end_offsetx, end_offsety];
     };
     
     const handleNodeClicked = (e, node) => {
-        if(e.button === 0  && !animationNode){ //Only primary click and not when node is being moved
+        if(e.button === 0  && !animationNode && drawGraph){ //Only primary click and not when node is being moved
             if(deleteMode){
                 //Remove node from nodes and any connections with node.id at either start or end of link
                 const nodes_copy = nodes.slice();
@@ -216,9 +224,9 @@ export function Graph() {
             }
             else if(node.id !== startLineNode.id){ //connect nodes with arrows
                 const angle = getAngle(startLineNode, node);
-                const arrow_width = 8; //px
+                const arrow_width = ARROW_WIDTH; //px
                 let [start_offsetx, start_offsety] = getStartOffsets(startLineNode, angle);
-                let [end_offsetx, end_offsety] = getEndOffsets(node, angle);                
+                let [end_offsetx, end_offsety] = getEndOffsets(node, angle, directed);                
                     
                 //Check for overlap of arrows
                 let overlap = false;
@@ -228,8 +236,13 @@ export function Graph() {
                         overlap = true;
                         break;
                     }
-                    else if(startLineNode.id === arrows[i].endID && node.id === arrows[i].startID) {  //Mark index of double connected nodes
+                    else if(startLineNode.id === arrows[i].endID && node.id === arrows[i].startID && directed) {  //Mark index of double connected nodes
                         doubleEdgeNodePair = i;
+                        break;
+                    }
+                    else if(startLineNode.id === arrows[i].endID && node.id === arrows[i].startID){ //Undirected
+                        overlap = true;
+                        break;
                     }
                 }
 
@@ -249,12 +262,13 @@ export function Graph() {
                                             nodey2: arrows[doubleEdgeNodePair].nodey2 - arrow_width * Math.cos(angle),
                                             startID: node.id,
                                             endID: startLineNode.id,
-                                            id: numLinks
+                                            id: numLinks,
+                                            weight: arrows[doubleEdgeNodePair].weight
                                         };
                         arrows.splice(doubleEdgeNodePair, 1, replacement); //Replace current line by updated offset
                         numLinks++;
                     }
-                    setArrows([...arrows, {nodex1:start_offsetx, nodey1:start_offsety, nodex2:end_offsetx, nodey2:end_offsety, startID:startLineNode.id, endID:node.id, id:numLinks}]);
+                    setArrows([...arrows, {nodex1:start_offsetx, nodey1:start_offsety, nodex2:end_offsetx, nodey2:end_offsety, startID:startLineNode.id, endID:node.id, id:numLinks, weight: 1}]);
                     setNumArrows(numLinks+1);
                 }
             }
@@ -268,8 +282,11 @@ export function Graph() {
         /*e.type === 'mouseenter'*/
     };
 
-    const handleDrawAnimation = (e) => {
-        if(moveMode && animationNode){
+    const handleArrowAnimation = (e) => {
+        if(e.target.className==="weight-input"){
+            setAnimationArrow(null);
+        }
+        else if(moveMode && animationNode){
             setAnimationNode({x:e.nativeEvent.offsetX, y:e.nativeEvent.offsetY, id:animationNode.id})
         }
         else if(startLineNode){
@@ -284,7 +301,7 @@ export function Graph() {
             const angle = getAngle(startLineNode, pointer_coords);
             const [start_offsetx, start_offsety] = getStartOffsets(startLineNode, angle);
             
-            const pointer_size = 12;
+            const pointer_size = directed ? 12 : 2;
             const pointerx = pointer_size * Math.cos(angle);
             const pointery = pointer_size * Math.sin(angle);
             const end_offsetx = e.nativeEvent.offsetX - pointerx;
@@ -296,18 +313,6 @@ export function Graph() {
             setAnimationArrow(null);
         }
     };
-
-    const toggleDeleteMode = () => {
-        setStartLineNode(null);
-        setDeleteMode(!deleteMode);
-        setMoveMode(false);
-    };
-
-    const toggleMoveMode = () => {
-        setStartLineNode(null);
-        setMoveMode(!moveMode);
-        setDeleteMode(false);
-    }
 
     const handleLinkClick = (link) => {
         //Handle deleting link
@@ -325,7 +330,7 @@ export function Graph() {
             }
 
             if(connectedNodes){
-                const arrow_width = 8; //px
+                const arrow_width = ARROW_WIDTH; //px
                 let i_paired_link = 0;
                 while(i_paired_link < arrows_copy.length && !(arrows_copy[i_paired_link].startID === connectedNodes.endID && arrows_copy[i_paired_link].endID === connectedNodes.startID)) {
                     ++i_paired_link;
@@ -349,58 +354,269 @@ export function Graph() {
         return false;
     }
 
+    const handleMoveNodeInterrupt = () => {
+        const temp = nodes.slice();
+        temp.push(originalNode);
+        setNodes(temp);
+        setAnimationNode(null);
+        setOriginalNode(null);
+    }
+
+    const toggleDeleteMode = () => {
+        setStartLineNode(null);
+        setDeleteMode(!deleteMode);
+        setMoveMode(false);
+        if(animationNode){
+            handleMoveNodeInterrupt();
+        }
+    };
+
+    const toggleMoveMode = () => {
+        setStartLineNode(null);
+        setMoveMode(!moveMode);
+        setDeleteMode(false);
+        if(animationNode){
+            handleMoveNodeInterrupt();
+        }
+    }
+
     const toggleDrawGraph = () => {
+        //Update arrows and nodes to maintain distancing
+        const arrows_copy = arrows.slice();
+        const double_connections = [];
+        const nodes_copy = nodes.slice();
+
+        nodes_copy.forEach((node) => {
+            if(drawGraph){
+                node.x *= LOCKED_MULTIPLIER;
+                node.y *= LOCKED_MULTIPLIER;
+            }
+            else {
+                node.x /= LOCKED_MULTIPLIER;
+                node.y /= LOCKED_MULTIPLIER;
+            }
+        })
+
+        for(let i = 0; i<arrows_copy.length; i++){
+            if(!double_connections.includes(arrows_copy[i].id)){
+                updateMovedNodeLinks(findNodeFromID(arrows_copy[i].startID, nodes_copy), findNodeFromID(arrows_copy[i].endID, nodes_copy), i, arrows_copy, double_connections, directed); //arrows_copy and double_connections updated in function
+            }
+        }
+
+        setNodes(nodes_copy);
+        setArrows(arrows_copy);
         setDrawGraph(!drawGraph);
         setMoveMode(false);
         setDeleteMode(false);
+        if(animationNode){
+            handleMoveNodeInterrupt();
+        }
     };
 
+    const toggleDirected = (val) => {
+        if(val && val !== directed){ //Set to directed (don't consider any double edges)
+            const new_arrows = arrows.slice();
+
+            for(let i = 0; i<new_arrows.length; i++){
+                updateMovedNodeLinks(findNodeFromID(new_arrows[i].startID, nodes), findNodeFromID(new_arrows[i].endID, nodes), i, new_arrows, []);
+            }
+
+            setArrows(new_arrows);
+        }
+        else if (val !== directed){ //Set to undirected
+            const new_arrows = [];
+            //Get rid of double edges
+            for(let i = 0; i<arrows.length; ++i){
+                let include = true;
+                let j = 0;
+                while(j<new_arrows.length && include){
+                    if(new_arrows[j].startID === arrows[i].endID && new_arrows[j].endID === arrows[i].startID){
+                        include = false;
+                    }
+                    else{
+                        ++j;
+                    }
+                }
+                if(include){
+                    new_arrows.push(arrows[i]);
+                }
+            }
+
+            for(let i = 0; i<new_arrows.length; i++){
+                updateMovedNodeLinks(findNodeFromID(new_arrows[i].startID, nodes), findNodeFromID(new_arrows[i].endID, nodes), i, new_arrows, [], false);
+            }
+
+            setArrows(new_arrows);
+        }
+        setDirected(val);
+    };
+
+    const toggleWeighted = (val) => {
+        //Update arrows and nodes to add appropriate distancing
+        const arrows_copy = arrows.slice();
+        const double_connections = [];
+        if(directed && val && val !== weighted){ //Set weights
+            for(let i = 0; i<arrows_copy.length; i++){
+                if(!double_connections.includes(arrows_copy[i].id)){
+                    updateMovedNodeLinks(findNodeFromID(arrows_copy[i].startID, nodes), findNodeFromID(arrows_copy[i].endID, nodes), i, arrows_copy, double_connections, directed, 11); //arrows_copy and double_connections updated in function
+                }
+            }
+        }
+        else if (directed && val !== weighted){ //Remove weights
+            for(let i = 0; i<arrows_copy.length; i++){
+                if(!double_connections.includes(arrows_copy[i].id)){
+                    updateMovedNodeLinks(findNodeFromID(arrows_copy[i].startID, nodes), findNodeFromID(arrows_copy[i].endID, nodes), i, arrows_copy, double_connections, directed, 8, val);
+                }
+            }
+        }
+        
+        setWeighted(val);
+        setArrows(arrows_copy);
+    };
+
+    const handleChangeGraphType = () => {
+        console.log("Change graph type options");
+        setMoveMode(false);
+        setDeleteMode(false);
+        if(animationNode){
+            handleMoveNodeInterrupt();
+        }
+    };
+
+    const clearGraph = () => {
+        setNodes([]);
+        setArrows([]);
+        setNumNodes(1);
+        setStartLineNode(null);
+        setNumArrows(1);
+        setAnimationArrow(null);
+        setDeleteMode(false);
+        setMoveMode(false);
+        setAnimationNode(null);
+        setOriginalNode(null);
+    }
+
+    //Updates weight of arrow
+    const updateArrowWeight = (e, id) => {
+        const arrows_copy = arrows.slice();
+        let i = 0;
+        //Find arrow whose weight is being updated
+        while(i < arrows_copy.length && arrows_copy[i].id !== id){
+            i++;
+        }
+        
+        //Errror handling for id not found
+        if(i >= arrows_copy.length){
+            alert("Error");
+            return;
+        }
+        else if (e.target.value[0] === "0") { //Avoid case of adding 0s to the front
+            e.target.value = e.target.value.substr(1);
+        }
+        
+        const eventNum = parseInt(e.target.value);
+        const addedValue = parseInt(e.nativeEvent.data);
+        const prevValue = arrows_copy[i].weight;
+        const MAX = 50;
+        const MIN = 1;
+
+        if (!eventNum){ //Delete a single digit
+            arrows_copy[i].weight = MIN;
+        }
+        else if (eventNum >= MAX && prevValue < 10){ //Replace current digit to avoid going over MAX (if max < 100)
+            console.log("j")
+            arrows_copy[i].weight = addedValue === 0 ? MIN : addedValue;
+        }
+        else if (!addedValue && eventNum < MAX){ //Delete a digit
+            arrows_copy[i].weight = eventNum;
+        }
+        else if (prevValue < Math.floor(MAX/10)){ //Append to single digit if adding another digit would be less than max
+            arrows_copy[i].weight = eventNum;
+        }
+        else if (prevValue >= 10 && e.target.value.indexOf(String(prevValue)) === 0){ //Adding a number to the end
+            arrows_copy[i].weight = Math.floor(prevValue / 10) * 10 + addedValue;
+        }
+        else if (prevValue >= 10 && e.target.value.indexOf(String(prevValue)) === -1){ //Adding a number to the end (from middle)
+            arrows_copy[i].weight = Math.floor(prevValue / 10) * 10 + addedValue;
+        }
+        else if (prevValue >= 10 && e.target.value.indexOf(String(addedValue)) === 0 && Math.floor(eventNum / 10) < MAX){ //Adding a number to the start
+            arrows_copy[i].weight = Math.floor(eventNum / 10);
+        }
+        
+        setArrows(arrows_copy);
+    }
 
 	return (
 		<div>
             <h1 className="header">Draw your Graph</h1> 
-            {drawGraph && 
-                <svg className="canvas" height={CONTAINER_HEIGHT} width={CONTAINER_WIDTH} onMouseDown={handleCanvasClicked} onMouseMove={handleDrawAnimation}>
-                    <defs>
-                        <marker id="markerArrow" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
-                            <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "#000000"}} />
-                        </marker>
-                    </defs>
-                    <g>
-                        {nodes.map((node, i) => (
-                            <g key={i}>
-                                <circle className="node" 
-                                        r={NODE_RADIUS} 
-                                        cx={node.x} 
-                                        cy={node.y}
-                                        onMouseDown = {(e) => handleNodeClicked(e, node)}
-                                        onMouseEnter = {(e) => handleNodeHover(e, node.id)}
-                                        onMouseLeave = {(e) => handleNodeHover(e, node.id)}
-                                        style={{fill: startLineNode && startLineNode.id === node.id ? HOVER_BACKGROUND : DEFAULT_BACKGROUND}}
-                                ></circle>
-                            </g>
-                        ))}
+            <svg className={drawGraph ? "canvas" : "canvas-locked"} 
+                height={drawGraph ? CONTAINER_HEIGHT : LOCKED_MULTIPLIER * CONTAINER_HEIGHT}
+                width={drawGraph ? CONTAINER_WIDTH : LOCKED_MULTIPLIER * CONTAINER_WIDTH} 
+                onMouseDown={handleCanvasClicked} 
+                onMouseMove={handleArrowAnimation}
+            >
+                <defs>
+                    {directed && <marker id="markerArrow" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
+                        <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "#000000"}} />
+                    </marker>}
+                </defs>
+                <g>
+                    {nodes.map((node, i) => (
+                        <g key={i}>
+                            <circle className="node" 
+                                    r={NODE_RADIUS} 
+                                    cx={node.x} 
+                                    cy={node.y}
+                                    onMouseDown = {(e) => handleNodeClicked(e, node)}
+                                    onMouseEnter = {(e) => handleNodeHover(e, node.id)}
+                                    onMouseLeave = {(e) => handleNodeHover(e, node.id)}
+                                    style={{fill: startLineNode && startLineNode.id === node.id ? HOVER_BACKGROUND : DEFAULT_BACKGROUND}}
+                            ></circle>
+                        </g>
+                    ))}
+                </g>
+
+                {arrows.map((arrow, i) => (
+                    <g key={i}>
+                        <line x1={arrow.nodex1} 
+                            y1={arrow.nodey1} 
+                            x2={arrow.nodex2} 
+                            y2={arrow.nodey2} 
+                            className="arrow" 
+                            onClick={() => handleLinkClick(arrow)}
+                            style={deleteMode ? {cursor:"pointer"}:{}}
+                        />
+                        {weighted && 
+                            <foreignObject
+                                x={(arrow.nodex1+arrow.nodex2) / 2 - 13}
+                                y={(arrow.nodey1+arrow.nodey2) / 2 - 10}
+                                width="33"
+                                height="24"
+                            >
+                                <input
+                                    className="weight-input"
+                                    type="number"
+                                    min="1"
+                                    max="50"
+                                    step="1"
+                                    value={arrow.weight}
+                                    onChange={(e)=>updateArrowWeight(e, arrow.id)}
+                                    onClick={deleteMode?()=>handleLinkClick(arrow):undefined}
+                                    style={deleteMode?{color:"transparent"}:{}} 
+                                /> {/*Adding the style avoids weird case where an input gets clicked when deleting another*/}
+
+                            </foreignObject>
+                        }
+                        
                     </g>
+                ))}
+
+                {animationArrow &&
                     <g>
-                        {arrows.map((arrow, i) => (
-                            <line x1={arrow.nodex1} 
-                                y1={arrow.nodey1} 
-                                x2={arrow.nodex2} 
-                                y2={arrow.nodey2} 
-                                className="arrow" 
-                                key={i} 
-                                onClick={() => handleLinkClick(arrow)}
-                                style={deleteMode ? {cursor:"pointer"}:{}}
-                            />
-                            ))}        
+                        <line x1={animationArrow.startx} y1={animationArrow.starty} x2={animationArrow.endx} y2={animationArrow.endy} className="arrow"/>
                     </g>
-                    {animationArrow ? 
-                    <g>
-                        <line x1={animationArrow.startx} y1={animationArrow.starty} x2={animationArrow.endx} y2={animationArrow.endy} className="arrow"/>   
-                    </g>
-                        :null
-                    }
-                    {animationNode ? 
+                }
+                {animationNode &&
                     <g>
                         <circle className="node animation-node" 
                                         r={NODE_RADIUS} 
@@ -413,44 +629,22 @@ export function Graph() {
                                         cy={originalNode.y}
                         ></circle>
                     </g>
-                        :null
-                    }
-                </svg>
-            }
-            {!drawGraph && 
-                <svg className="canvas-locked" height={LOCKED_MULTIPLIER * CONTAINER_HEIGHT} width={LOCKED_MULTIPLIER * CONTAINER_WIDTH}>
-                    <defs>
-                        <marker id="markerArrow" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
-                            <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "#000000"}} />
-                        </marker>
-                    </defs>
-                    <g>
-                        {nodes.map((node, i) => (
-                            <g key={i}>
-                                <circle className="node" 
-                                        r={NODE_RADIUS} 
-                                        cx={LOCKED_MULTIPLIER * node.x} 
-                                        cy={LOCKED_MULTIPLIER * node.y}
-                                ></circle>
-                            </g>
-                        ))}
-                    </g>
-                    <g>
-                        {arrows.map((arrow, i) => (
-                            <line x1={LOCKED_MULTIPLIER * arrow.nodex1} 
-                                    y1={LOCKED_MULTIPLIER * arrow.nodey1} 
-                                    x2={LOCKED_MULTIPLIER * arrow.nodex2} 
-                                    y2={LOCKED_MULTIPLIER * arrow.nodey2} className="arrow" key={i}/>
-                        ))}
-                    </g>
-                </svg>
-            }
+                }
+
+            </svg>
+
             <Sidebar drawGraph={drawGraph} 
                     lockUnlock={toggleDrawGraph}
                     toggleDeleteMode={toggleDeleteMode}
                     toggleMoveMode={toggleMoveMode}
+                    toggleWeighted={toggleWeighted}
+                    toggleDirected={toggleDirected}
+                    handleChangeGraphType={handleChangeGraphType}
                     isDeleteMode={deleteMode}
                     isMoveMode={moveMode}
+                    weighted={weighted}
+                    directed={directed}
+                    clearGraph={clearGraph}
             ></Sidebar>       
 		</div>
 	);

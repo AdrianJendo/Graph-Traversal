@@ -1,11 +1,25 @@
 import "./Sidebar.css";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 
 export function Sidebar(props) {
 
-    const{lockUnlock, drawGraph, toggleDeleteMode, isDeleteMode, isMoveMode, toggleMoveMode} = props;
+    const{
+        lockUnlock, 
+        drawGraph, 
+        toggleDeleteMode, 
+        isDeleteMode, 
+        isMoveMode, 
+        toggleMoveMode, 
+        directed, 
+        weighted,
+        toggleWeighted,
+        toggleDirected,
+        clearGraph,
+        handleChangeGraphType
+    } = props; //handleChangeGraphType
 
     const [showPanel, setShowPanel] = useState(true);
+    const [graphTypeMenu, setGraphTypeMenu] = useState(false);
 
     const toggleSidebar = () => {
         setShowPanel(!showPanel);
@@ -13,30 +27,63 @@ export function Sidebar(props) {
 
     const handleItemClick = () => {
         console.log("click");
-    }
+    };
+
+    const toggleGraphTypeMenu = () => {
+        setGraphTypeMenu(!graphTypeMenu);
+        handleChangeGraphType();
+    };
 
 
 	return (
 		<div>
             <div className = {`sidebar ${showPanel ? 'open-panel' : 'close-panel'}`}>
-                <div className="panel">
-                    <p className="panel-element" onClick={lockUnlock}>{drawGraph ? "Lock" : "Unlock"}</p>
-                    <p className="panel-element"
-                        onClick={drawGraph ? toggleMoveMode : handleItemClick}
-                        style={isMoveMode ? {backgroundColor:"green"} : {}}>{drawGraph ? "Move Node" : "Item 2"}</p>
-                    <p className="panel-element" 
-                        onClick={drawGraph ? toggleDeleteMode : handleItemClick}
-                        style={isDeleteMode ? {backgroundColor:"green"} : {}}
-                    >{drawGraph ? "Delete Node/Link" : "Item 3"}</p>
-                    <p className="panel-element">Item 4</p>
-                    <p className="panel-element">Item 5</p>
-                    <p className="panel-element">Item 6</p>
-                    <p className="panel-element">Item 7</p>
+                <div>
+                    <div className="panel panel-default">
+                        <p className="panel-element" onClick={graphTypeMenu ? toggleGraphTypeMenu : lockUnlock}>
+                            <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Lock" : "Unlock"}</span>
+                            <span 
+                                className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`} 
+                                style={{borderBottom:"2px solid white"}}
+                            >
+                                {"<<"}
+                            </span>
+                        </p>
+                        <p 
+                            className={`panel-element ${graphTypeMenu && !weighted ? "graphTypeSelected" : ""}`}
+                            onClick={graphTypeMenu ? ()=>toggleWeighted(false) : drawGraph ? toggleGraphTypeMenu : undefined}
+                        >
+                            <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Change Graph Type" : "Item 1"}</span>
+                            <span className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`}>Unweighted</span>
+                        </p>
+                        <p 
+                            className={`panel-element ${graphTypeMenu && weighted ? "graphTypeSelected" : ""}`}
+                            onClick={graphTypeMenu ? ()=>toggleWeighted(true) : drawGraph ? toggleMoveMode : handleItemClick}
+                            style={graphTypeMenu ? {} : isMoveMode ? {backgroundColor:"green"} : {}}
+                        >
+                            <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Move Node" : "Item 2"}</span>
+                            <span className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`}>Weighted</span>
+                        </p>
+                        <p 
+                            className={`panel-element ${graphTypeMenu && !directed ? "graphTypeSelected" : ""}`}
+                            onClick={graphTypeMenu ? ()=>toggleDirected(false): drawGraph ? toggleDeleteMode : handleItemClick}
+                            style={graphTypeMenu ? {} : isDeleteMode ? {backgroundColor:"green"} : {}}
+                        >
+                            <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Delete Node/Link" : "Item 3"}</span>
+                            <span className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`}>Undirected</span>
+                        </p>
+                        <p 
+                            className={`panel-element ${graphTypeMenu && directed ? "graphTypeSelected" : ""}`}
+                            onClick={graphTypeMenu ? ()=>toggleDirected(true) : drawGraph ? clearGraph : undefined}
+                        >
+                            <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Clear Graph" : "Item 4"}</span>
+                            <span className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`}>Directed</span>
+                        </p>
+                    </div>
                 </div>
             </div>
-            
             <div className="panel-hide" onClick={toggleSidebar}>
-                <div className={`close-open ${showPanel ? 'open' : 'close'}`}>
+                <div className={`close-open ${showPanel ? 'open-rotate' : 'close-rotate'}`}>
                     {showPanel ? '>' : '<'}    
                 </div>
             </div>
