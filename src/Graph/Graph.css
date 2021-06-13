@@ -45,6 +45,35 @@
 	width: calc(var(--radius) * 2px);*/
 }
 
+.node-number {
+	color: transparent;
+	cursor: pointer;
+}
+
+.node-number::selection {
+    background: none;
+}
+
+.delete-node-hover {
+	fill: red;
+	opacity: 0.8;
+}
+
+.delete-arrow-hover {
+	cursor: pointer;
+	stroke: red;
+	stroke-width:2;
+	marker-end:url(#markerArrowDelete);
+}
+
+.move-node-hover {
+	fill: #7FFF00;
+}
+
+.draw-node-connection {
+	fill: orange;
+}
+
 .original-node {
 	background-color: gray;
 	opacity: 0.2;

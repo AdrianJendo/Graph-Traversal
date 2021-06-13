@@ -1,5 +1,5 @@
 import "./Sidebar.css";
-import React, {useEffect, useState} from "react";
+import React, {useState} from "react";
 
 export function Sidebar(props) {
 
@@ -16,17 +16,13 @@ export function Sidebar(props) {
         toggleDirected,
         clearGraph,
         handleChangeGraphType
-    } = props; //handleChangeGraphType
+    } = props;
 
     const [showPanel, setShowPanel] = useState(true);
     const [graphTypeMenu, setGraphTypeMenu] = useState(false);
 
     const toggleSidebar = () => {
         setShowPanel(!showPanel);
-    };
-
-    const handleItemClick = () => {
-        console.log("click");
     };
 
     const toggleGraphTypeMenu = () => {
@@ -58,7 +54,7 @@ export function Sidebar(props) {
                         </p>
                         <p 
                             className={`panel-element ${graphTypeMenu && weighted ? "graphTypeSelected" : ""}`}
-                            onClick={graphTypeMenu ? ()=>toggleWeighted(true) : drawGraph ? toggleMoveMode : handleItemClick}
+                            onClick={graphTypeMenu ? ()=>toggleWeighted(true) : drawGraph ? toggleMoveMode : undefined}
                             style={graphTypeMenu ? {} : isMoveMode ? {backgroundColor:"green"} : {}}
                         >
                             <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Move Node" : "Item 2"}</span>
@@ -66,7 +62,7 @@ export function Sidebar(props) {
                         </p>
                         <p 
                             className={`panel-element ${graphTypeMenu && !directed ? "graphTypeSelected" : ""}`}
-                            onClick={graphTypeMenu ? ()=>toggleDirected(false): drawGraph ? toggleDeleteMode : handleItemClick}
+                            onClick={graphTypeMenu ? ()=>toggleDirected(false): drawGraph ? toggleDeleteMode : undefined}
                             style={graphTypeMenu ? {} : isDeleteMode ? {backgroundColor:"green"} : {}}
                         >
                             <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Delete Node/Link" : "Item 3"}</span>

@@ -2,32 +2,34 @@ import "./Graph.css";
 import React, { useState } from "react";
 import {Sidebar} from "./Sidebar"
 
+//Consts
 const LOCKED_MULTIPLIER = 1.2;
 const CONTAINER_HEIGHT = 600;
 const CONTAINER_WIDTH = 1200;
 const NODE_RADIUS = 20;
-const DEFAULT_BACKGROUND = 'white';
-const HOVER_BACKGROUND = 'orange';
 const BUFFER = 15;
 
 export function Graph() {
     
-    const [drawGraph, setDrawGraph] = useState(true);
-    const [numNodes, setNumNodes] = useState(1);
-	const [nodes, setNodes] = useState([]);
-    const [startLineNode, setStartLineNode] = useState(null);
-    const [numArrows, setNumArrows] = useState(1);
-    const [arrows, setArrows] = useState([]);
-    const [animationArrow, setAnimationArrow] = useState(null);
-    const [deleteMode, setDeleteMode] = useState(false);
-    const [moveMode, setMoveMode] = useState(false);
-    const [animationNode, setAnimationNode] = useState(null);
-    const [originalNode, setOriginalNode] = useState(null);
-    const [weighted, setWeighted] = useState(false);
-    const [directed, setDirected] = useState(true);
+    const [drawGraph, setDrawGraph] = useState(true); //mode for drawing graph (lock/unlock graph)
+    const [numNodes, setNumNodes] = useState(1); //used to give unique id to each new node (doesn't decrement when a node is deleted)
+	const [nodes, setNodes] = useState([]); //list of node objects
+    const [startLineNode, setStartLineNode] = useState(null); //starting node when connecting nodes
+    const [numArrows, setNumArrows] = useState(1); //used to give unique id to each new arrow (doesn't decrement when an arrow is deleted)
+    const [arrows, setArrows] = useState([]); //list of arrow objects
+    const [animationArrow, setAnimationArrow] = useState(null); //used to draw the realtime animated arrow when connecting two nodes
+    const [deleteMode, setDeleteMode] = useState(false); //true if delete mode is enabled
+    const [hoverNode, setHoverNode] = useState(null); //if delete mode is on, this is the node that is being hovered over
+    const [hoverArrow, setHoverArrow] = useState(null); //if delete mode is on, this is the link that is being hovered over
+    const [moveMode, setMoveMode] = useState(false); //true if move mode is enabled
+    const [animationNode, setAnimationNode] = useState(null); //realtime animated node when moving a node
+    const [originalNode, setOriginalNode] = useState(null); //outline of original node when when moving a node
+    const [weighted, setWeighted] = useState(false); //true if graph is weighted
+    const [directed, setDirected] = useState(true); //true if graph is directed
 
     const ARROW_WIDTH = weighted ? 11 : 8; //px
 
+    //Handles event when canvas is clicked
 	const handleCanvasClicked = (e) => {
         if(e.target.className === "node" || e.button !== 0 || deleteMode || !drawGraph) return;
 
@@ -39,19 +41,23 @@ export function Graph() {
         const coord_x = e.nativeEvent.offsetX;
         const coord_y = e.nativeEvent.offsetY;
         let update = true;
-        
-        nodes.forEach((node)=>{
-            const distance = Math.sqrt(Math.pow(node.x-coord_x, 2) + Math.pow(node.y-coord_y, 2));
+        let idx = 0;
+
+        //Check if adding a new node at the clicked location would overlap an existing node
+        while(idx < nodes.length && update){
+            const distance = Math.sqrt(Math.pow(nodes[idx].x-coord_x, 2) + Math.pow(nodes[idx].y-coord_y, 2));
             if(distance < 2*NODE_RADIUS + BUFFER) {
                 update = false; //Prevents two node from being on top of each other
-                return;
             }
-        })
+            else{
+                idx++;
+            }
+        }
         
         if(update){
-            if(animationNode){ //Graph was just moved
+            if(animationNode){ //Node was just moved
                 //Move links to new node location
-                const arrows_copy = arrows;
+                const arrows_copy = arrows.slice();
                 const double_connections = [];
                 for(let i = 0; i<arrows_copy.length; i++){
                     if(!double_connections.includes(arrows_copy[i].id)){
@@ -70,20 +76,28 @@ export function Graph() {
                 setAnimationNode(null);
                 setOriginalNode(null);
             }
-            else {
+            else if (!moveMode) { //Adding a new node
                 setNodes([...nodes, {x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY, id:numNodes}]);
                 setNumNodes(numNodes+1);
             }
         }
 	};
+    
+    //Sorts Node Array
+    const sortNodesArray = (nodes) => {
+        const nodes_copy = nodes.sort((node1, node2) => node1.id - node2.id);
+        return nodes_copy;
+    };
 
+    //Returns node object from nodes array based on unique id
     const findNodeFromID = (id, nodes) => {
         const valid_nodes = nodes.filter((node) => {
             return node.id === id;
         });
         return valid_nodes[0];
-    }
+    };
 
+    //Updates arrows to new node location
     const updateMovedNodeLinks = (startNode, endNode, index, links, double_connections, directed = true, arrow_width=ARROW_WIDTH, keepWeights=true) => {
         const angle = getAngle(startNode, endNode);
         //const arrow_width = 11; //px
@@ -171,36 +185,55 @@ export function Graph() {
         return [end_offsetx, end_offsety];
     };
     
+    //Handle clicking on a node
     const handleNodeClicked = (e, node) => {
         if(e.button === 0  && !animationNode && drawGraph){ //Only primary click and not when node is being moved
-            if(deleteMode){
+            if(deleteMode){ //Handle deleting node
                 //Remove node from nodes and any connections with node.id at either start or end of link
-                const nodes_copy = nodes.slice();
-                for(let i=0; i<nodes_copy.length; ++i){
-                    if(nodes_copy[i].id === node.id){
-                        nodes_copy.splice(i, 1)
-                        break;
-                    }
-                }
-
-                const arrows_copy = arrows.slice();
+                const nodes_copy = sortNodesArray(nodes.slice()); //Order by id
                 let i = 0;
-                while(i<arrows_copy.length){
-                    if(arrows_copy[i].startID === node.id || arrows_copy[i].endID === node.id){
-                        arrows_copy.splice(i,1);
+                let found = false;
+                while(i < nodes_copy.length){
+                    if(found) { //Decrement any node that has id > id of deleted node
+                        --nodes_copy[i].id;
+                        ++i;
+                    }
+                    else if(nodes_copy[i].id === node.id){
+                        nodes_copy.splice(i, 1);
+                        found = true;
                     }
                     else{
                         ++i;
                     }
                 }
 
+                
+                //Remove arrows that are connected to node
+                const arrows_copy = arrows.slice();
+                i = 0;
+                while(i<arrows_copy.length){
+                    if(arrows_copy[i].startID === node.id || arrows_copy[i].endID === node.id){
+                        arrows_copy.splice(i, 1);
+                    }
+                    else{ //Decrement start and end id of every arrow with id > id of deleted node
+                        if(arrows_copy[i].startID > node.id){
+                            --arrows_copy[i].startID;
+                        }
+                        if(arrows_copy[i].endID > node.id) {
+                            --arrows_copy[i].endID;
+                        }
+                        ++i;
+                    }
+                }
+
+                setHoverNode(null);
                 setNodes(nodes_copy);
                 setArrows(arrows_copy);
+                //Don't use the arrows id anywhere so don't care about resetting
+                setNumNodes(numNodes - 1); 
             }
-            else if(moveMode){
-                //Handle moving node
-                console.log(node);
-                //Set node as last element of nodes
+            else if(moveMode){ //Handle moving node
+                //Remove node from nodes list and set as animation node
                 let i = 0;
                 const nodes_copy = nodes.slice();
                 while(i < nodes_copy.length && nodes_copy[i].id !== node.id){
@@ -218,7 +251,7 @@ export function Graph() {
                     setNodes(nodes_copy);
                 }
             }
-            else if(!startLineNode){
+            else if(!startLineNode){ //Start animation to draw new line
                 setStartLineNode(node); //Change colour & signal arrow animation
                 return;
             }
@@ -231,18 +264,18 @@ export function Graph() {
                 //Check for overlap of arrows
                 let overlap = false;
                 let doubleEdgeNodePair = -1; //Look for two nodes connected by two directional edges
-                for(let i = 0; i<arrows.length; ++i){
-                    if(startLineNode.id === arrows[i].startID && node.id === arrows[i].endID) { //Trying to draw same line between already connected nodes
-                        overlap = true;
-                        break;
-                    }
-                    else if(startLineNode.id === arrows[i].endID && node.id === arrows[i].startID && directed) {  //Mark index of double connected nodes
+                let i = 0;
+                while(i < arrows.length && !overlap && doubleEdgeNodePair === -1) {
+
+                    if(startLineNode.id === arrows[i].endID && node.id === arrows[i].startID && directed) {  //Mark index of double connected nodes
                         doubleEdgeNodePair = i;
-                        break;
                     }
-                    else if(startLineNode.id === arrows[i].endID && node.id === arrows[i].startID){ //Undirected
+                    else if((startLineNode.id === arrows[i].startID && node.id === arrows[i].endID) || //Trying to draw same line between already connected nodes
+                            (startLineNode.id === arrows[i].endID && node.id === arrows[i].startID)){ //Undirected
                         overlap = true;
-                        break;
+                    }
+                    else{
+                        ++i;
                     }
                 }
 
@@ -251,7 +284,7 @@ export function Graph() {
                 }
                 else {
                     let numLinks = numArrows;
-                    if(doubleEdgeNodePair >= 0){ //Calculate required offset adjustmenet for doubly connected nodes
+                    if(doubleEdgeNodePair >= 0){ //Calculate required offset adjustment for doubly connected nodes
                         start_offsetx += arrow_width * Math.sin(angle);
                         start_offsety += arrow_width * Math.cos(angle);
                         end_offsetx += arrow_width * Math.sin(angle);
@@ -278,21 +311,33 @@ export function Graph() {
     };
     
     //Check if deletemode and set colour accordingly (do same for links)
-    const handleNodeHover = (e, id) => {
-        /*e.type === 'mouseenter'*/
+    const handleElementHover = (e, id) => {
+        if(e.type === "mouseenter"){
+            if(e.target.className.baseVal.indexOf("node") === 0){
+                setHoverNode(id);
+            }
+            else if (e.target.className.baseVal.indexOf("arrow") === 0){
+                setHoverArrow(id);
+            }
+        }
+        else {
+            setHoverNode(null);
+            setHoverArrow(null);
+        }
     };
 
+    //Handle animating arrow in real-time
     const handleArrowAnimation = (e) => {
-        if(e.target.className==="weight-input"){
+        if(e.target.className==="weight-input"){ //turn off animation when hoving over weight text
             setAnimationArrow(null);
         }
-        else if(moveMode && animationNode){
+        else if(moveMode && animationNode){ //Draw the animated node if currently moving a node
             setAnimationNode({x:e.nativeEvent.offsetX, y:e.nativeEvent.offsetY, id:animationNode.id})
         }
-        else if(startLineNode){
+        else if(startLineNode){ //Draw the animated arrow if a startnode has been selected
             const distance = Math.sqrt(Math.pow(e.nativeEvent.offsetX - startLineNode.x, 2) + Math.pow(e.nativeEvent.offsetY - startLineNode.y, 2));
 
-            if(distance < 2*NODE_RADIUS + BUFFER){
+            if(distance < 2*NODE_RADIUS + BUFFER){ //Nodes that are too close (shouldn't happen) will not get connected
                 setAnimationArrow(null);
                 return;
             }
@@ -309,33 +354,36 @@ export function Graph() {
 
             setAnimationArrow({startx: start_offsetx, starty: start_offsety, endx:end_offsetx, endy:end_offsety});
         }
-        else if(animationArrow) {
+        else if(animationArrow) { //Error handling
             setAnimationArrow(null);
         }
     };
 
+    //Handle action for clicking on an arrow (for deleting)
     const handleLinkClick = (link) => {
-        //Handle deleting link
         if(deleteMode){
-            console.log(arrows, nodes);
             let connectedNodes = {};
             const arrows_copy = arrows.slice();
-            for(let i=0; i<arrows_copy.length; ++i){
-                if(arrows_copy[i].id === link.id){
-                    connectedNodes.startID = arrows_copy[i].startID
-                    connectedNodes.endID = arrows_copy[i].endID
-                    arrows_copy.splice(i, 1);
-                    break;
-                }
+            let i = 0;
+            //Find index of link to be deleted
+            while(i < arrows_copy.length && arrows_copy[i].id !== link.id){
+                ++i;
             }
 
-            if(connectedNodes){
+            if(i < arrows_copy.length){
+                //Delete link from arrows array
+                connectedNodes.startID = arrows_copy[i].startID
+                connectedNodes.endID = arrows_copy[i].endID
+                arrows_copy.splice(i, 1);
+
+                //Check if there is another link that needs to be moved
                 const arrow_width = ARROW_WIDTH; //px
                 let i_paired_link = 0;
                 while(i_paired_link < arrows_copy.length && !(arrows_copy[i_paired_link].startID === connectedNodes.endID && arrows_copy[i_paired_link].endID === connectedNodes.startID)) {
                     ++i_paired_link;
                 }
-
+    
+                //If arrow was originally doubly connected, move 2nd arrow to middle
                 if(i_paired_link < arrows_copy.length) {
                     //Offset coordinates but angle is still the same
                     const endNode = {x:arrows_copy[i_paired_link].nodex2, y:arrows_copy[i_paired_link].nodey2}
@@ -348,12 +396,12 @@ export function Graph() {
                     arrows_copy[i_paired_link].nodey2 -= arrow_width * Math.cos(angle);
                 }
                 setArrows(arrows_copy);
+                setHoverArrow(null);
             }
         }
-
-        return false;
     }
 
+    //Handle interrupting moving a node (click another option or something)
     const handleMoveNodeInterrupt = () => {
         const temp = nodes.slice();
         temp.push(originalNode);
@@ -362,6 +410,7 @@ export function Graph() {
         setOriginalNode(null);
     }
 
+    //Click on Delete Node/Link
     const toggleDeleteMode = () => {
         setStartLineNode(null);
         setDeleteMode(!deleteMode);
@@ -371,6 +420,7 @@ export function Graph() {
         }
     };
 
+    //Click on Move Node
     const toggleMoveMode = () => {
         setStartLineNode(null);
         setMoveMode(!moveMode);
@@ -380,18 +430,20 @@ export function Graph() {
         }
     }
 
+    //Lock / Unlock graph
     const toggleDrawGraph = () => {
         //Update arrows and nodes to maintain distancing
         const arrows_copy = arrows.slice();
         const double_connections = [];
         const nodes_copy = nodes.slice();
 
+        //Scale the nodes in the canvas accordingly to the new size
         nodes_copy.forEach((node) => {
-            if(drawGraph){
+            if(drawGraph){ //Locking draw
                 node.x *= LOCKED_MULTIPLIER;
                 node.y *= LOCKED_MULTIPLIER;
             }
-            else {
+            else { //Unlocking draw
                 node.x /= LOCKED_MULTIPLIER;
                 node.y /= LOCKED_MULTIPLIER;
             }
@@ -413,6 +465,7 @@ export function Graph() {
         }
     };
 
+    //Change graphtype to directed / undirected
     const toggleDirected = (val) => {
         if(val && val !== directed){ //Set to directed (don't consider any double edges)
             const new_arrows = arrows.slice();
@@ -451,21 +504,16 @@ export function Graph() {
         setDirected(val);
     };
 
+    //Change graphtype to weighted / unweighted
     const toggleWeighted = (val) => {
         //Update arrows and nodes to add appropriate distancing
         const arrows_copy = arrows.slice();
         const double_connections = [];
-        if(directed && val && val !== weighted){ //Set weights
+        const arrow_width = val ? 11 : 8; //11 for setting weighted and 8 for setting unweighted
+        if(directed && val !== weighted){
             for(let i = 0; i<arrows_copy.length; i++){
                 if(!double_connections.includes(arrows_copy[i].id)){
-                    updateMovedNodeLinks(findNodeFromID(arrows_copy[i].startID, nodes), findNodeFromID(arrows_copy[i].endID, nodes), i, arrows_copy, double_connections, directed, 11); //arrows_copy and double_connections updated in function
-                }
-            }
-        }
-        else if (directed && val !== weighted){ //Remove weights
-            for(let i = 0; i<arrows_copy.length; i++){
-                if(!double_connections.includes(arrows_copy[i].id)){
-                    updateMovedNodeLinks(findNodeFromID(arrows_copy[i].startID, nodes), findNodeFromID(arrows_copy[i].endID, nodes), i, arrows_copy, double_connections, directed, 8, val);
+                    updateMovedNodeLinks(findNodeFromID(arrows_copy[i].startID, nodes), findNodeFromID(arrows_copy[i].endID, nodes), i, arrows_copy, double_connections, directed, arrow_width, val); //use 11 for arrow width (setting weighted)
                 }
             }
         }
@@ -474,8 +522,8 @@ export function Graph() {
         setArrows(arrows_copy);
     };
 
+    //Change the sidebar to display the different graph options
     const handleChangeGraphType = () => {
-        console.log("Change graph type options");
         setMoveMode(false);
         setDeleteMode(false);
         if(animationNode){
@@ -483,6 +531,7 @@ export function Graph() {
         }
     };
 
+    //Clear graph of all nodes / arrows
     const clearGraph = () => {
         setNodes([]);
         setArrows([]);
@@ -514,20 +563,19 @@ export function Graph() {
             e.target.value = e.target.value.substr(1);
         }
         
-        const eventNum = parseInt(e.target.value);
-        const addedValue = parseInt(e.nativeEvent.data);
-        const prevValue = arrows_copy[i].weight;
-        const MAX = 50;
-        const MIN = 1;
+        const eventNum = parseInt(e.target.value); //Value typed into input box
+        const addedValue = parseInt(e.nativeEvent.data); //New number added to input box
+        const prevValue = arrows_copy[i].weight; //Previous value in input box
+        const MAX = 50; //Max weight
+        const MIN = 1; //Min weight
 
         if (!eventNum){ //Delete a single digit
             arrows_copy[i].weight = MIN;
         }
-        else if (eventNum >= MAX && prevValue < 10){ //Replace current digit to avoid going over MAX (if max < 100)
-            console.log("j")
+        else if (eventNum > MAX && prevValue < 10){ //Replace current digit to avoid going over MAX (if max < 100)
             arrows_copy[i].weight = addedValue === 0 ? MIN : addedValue;
         }
-        else if (!addedValue && eventNum < MAX){ //Delete a digit
+        else if (!addedValue && eventNum <= MAX){ //Delete a digit
             arrows_copy[i].weight = eventNum;
         }
         else if (prevValue < Math.floor(MAX/10)){ //Append to single digit if adding another digit would be less than max
@@ -555,23 +603,43 @@ export function Graph() {
                 onMouseDown={handleCanvasClicked} 
                 onMouseMove={handleArrowAnimation}
             >
-                <defs>
-                    {directed && <marker id="markerArrow" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
-                        <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "#000000"}} />
-                    </marker>}
-                </defs>
+                {directed && 
+                    <defs>
+                        <marker id="markerArrow" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
+                            <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "#000000"}} />
+                        </marker>
+                        <marker id="markerArrowDelete" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
+                            <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "red"}} />
+                        </marker>
+                    </defs>
+                }
                 <g>
                     {nodes.map((node, i) => (
                         <g key={i}>
-                            <circle className="node" 
+                            <circle className={`node ${hoverNode && hoverNode === node.id ?
+                                                    deleteMode ?
+                                                        "delete-node-hover" : moveMode ?
+                                                            "move-node-hover" : !startLineNode ?
+                                                                "draw-node-connection" : "" 
+                                                    : startLineNode && startLineNode.id === node.id ? "draw-node-connection" : ""}`}
                                     r={NODE_RADIUS} 
                                     cx={node.x} 
                                     cy={node.y}
                                     onMouseDown = {(e) => handleNodeClicked(e, node)}
-                                    onMouseEnter = {(e) => handleNodeHover(e, node.id)}
-                                    onMouseLeave = {(e) => handleNodeHover(e, node.id)}
-                                    style={{fill: startLineNode && startLineNode.id === node.id ? HOVER_BACKGROUND : DEFAULT_BACKGROUND}}
+                                    onMouseEnter = {(e) => handleElementHover(e, node.id)}
+                                    onMouseLeave = {(e) => handleElementHover(e, node.id)}
                             ></circle>
+                            <text x={node.x} y={node.y}
+                                className="node-number"
+                                textAnchor="middle"
+                                stroke="black"
+                                strokeWidth="0.5px"
+                                alignmentBaseline="middle"
+                                onMouseDown = {(e) => handleNodeClicked(e, node)}
+                                onMouseEnter = {(e) => handleElementHover(e, node.id)}
+                            > 
+                                {node.id}
+                            </text>
                         </g>
                     ))}
                 </g>
@@ -582,9 +650,10 @@ export function Graph() {
                             y1={arrow.nodey1} 
                             x2={arrow.nodex2} 
                             y2={arrow.nodey2} 
-                            className="arrow" 
+                            className={`${deleteMode && hoverArrow && hoverArrow === arrow.id ? "delete-arrow-hover" : "arrow"}`}
                             onClick={() => handleLinkClick(arrow)}
-                            style={deleteMode ? {cursor:"pointer"}:{}}
+                            onMouseEnter={(e) => handleElementHover(e, arrow.id)}
+                            onMouseLeave={(e) => handleElementHover(e, arrow.id)}
                         />
                         {weighted && 
                             <foreignObject
@@ -607,7 +676,6 @@ export function Graph() {
 
                             </foreignObject>
                         }
-                        
                     </g>
                 ))}
 
@@ -623,14 +691,31 @@ export function Graph() {
                                         cx={animationNode.x} 
                                         cy={animationNode.y}
                         ></circle>
+                        <text x={animationNode.x} y={animationNode.y}
+                                className="animation-node node-number"
+                                textAnchor="middle"
+                                stroke="black"
+                                strokeWidth="0.5px"
+                                alignmentBaseline="middle"
+                            > 
+                                {animationNode.id}
+                        </text>
                         <circle className="node original-node" 
                                         r={NODE_RADIUS} 
                                         cx={originalNode.x} 
                                         cy={originalNode.y}
                         ></circle>
+                        <text x={originalNode.x} y={originalNode.y}
+                                className="original-node node-number"
+                                textAnchor="middle"
+                                stroke="black"
+                                strokeWidth="0.5px"
+                                alignmentBaseline="middle"
+                            > 
+                                {originalNode.id}
+                        </text>
                     </g>
                 }
-
             </svg>
 
             <Sidebar drawGraph={drawGraph} 
