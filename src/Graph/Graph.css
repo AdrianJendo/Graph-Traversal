@@ -45,12 +45,22 @@
 	width: calc(var(--radius) * 2px);*/
 }
 
+.no-click-node {
+	cursor: default;
+}
+
 .node-number {
 	color: transparent;
 	cursor: pointer;
 }
 
-.node-number::selection {
+.no-click-node-number {
+	color: transparent;
+	cursor: default;
+}
+
+.node-number::selection, 
+.no-click-node-number::selection {
     background: none;
 }
 
@@ -74,6 +84,10 @@
 	fill: orange;
 }
 
+.select-start-node {
+	fill: limegreen;
+}
+
 .original-node {
 	background-color: gray;
 	opacity: 0.2;
@@ -94,6 +108,11 @@
 	width: 25px;
 	text-align: center;
     text-shadow: 0 0 0 black;
+}
+
+.weight-input-disabled {
+	color: transparent;
+	cursor: default;
 }
 
 input:focus {
