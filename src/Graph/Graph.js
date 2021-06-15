@@ -1,7 +1,7 @@
 import "./Graph.css";
 import React, { useState } from "react";
 import {Sidebar} from "./Sidebar"
-import {getNodeLinkedList} from "../Algorithms/DataStructure"
+import {getGraphLinkedList} from "../Algorithms/DataStructure"
 import {graphSearch} from "../Algorithms/Algorithms"
 import {NODE_RADIUS, sortNodesArray, findNodeFromID, updateMovedNodeLinks, getAngle, getStartOffsets, getEndOffsets} from "./Helpers"
 
@@ -28,7 +28,7 @@ export function Graph() {
     const [originalNode, setOriginalNode] = useState(null); //outline of original node when when moving a node
     const [weighted, setWeighted] = useState(false); //true if graph is weighted
     const [directed, setDirected] = useState(true); //true if graph is directed
-    const [selectStartNode, setSelectStartNode] = useState(false);
+    const [startAnimationNode, setStartAnimationNode] = useState(false);
 
     const ARROW_WIDTH = weighted ? 11 : 8; //px
 
@@ -209,14 +209,34 @@ export function Graph() {
             setAnimationArrow(null);
             setStartLineNode(null);
         }
-        else if (e.button === 0 && selectStartNode){ //selecting start node for graph traversal
-            graphSearch();
+        else if (e.button === 0 && startAnimationNode){ //selecting start node for graph traversal
+            const visited_order = graphSearch(node, nodes, arrows, directed, false);
+            for(let i = 0; i<visited_order.length; ++i){
+                setTimeout( () => {
+                    console.log(visited_order[i]);
+                    //Add an attribute to nodes and arrows (isAnimated) and set to true... then use css to handle the animation
+                    //or use document.getElementById(`node-${node.row}-${node.col}`).className = 'node node-visited';
+                    
+                    //Animate node
+                    if(i%2 === 0){ //nodes are even entries
+                        document.getElementById(`node-${visited_order[i].nodeID}`).classList.add("node-visited");
+                        // document.getElementById(`node-${visited_order[i]}`).className = "node-visited";
+                        console.log(document.getElementById(`node-${visited_order[i].nodeID}`).classList);
+                    }
+                    else{
+                        //Animate arrow
+                        console.log(document.getElementById(`arrow-${visited_order[i].arrowID}`));
+                    }
+                    
+
+                }, i * 1000); //*ANIMATION_SPEED_MS
+            }
         }
     };
     
     //Check if deletemode and set colour accordingly (do same for links)
     const handleElementHover = (e, id) => {
-        if(e.type === "mouseenter"){
+        if(e.type === "mouseenter" && e.target.className.baseVal){
             if(e.target.className.baseVal.indexOf("node") === 0){
                 setHoverNode(id);
             }
@@ -500,13 +520,13 @@ export function Graph() {
         setArrows(arrows_copy);
     }
 
-    const toggleSelectStartNode = () => {
-        setSelectStartNode(!selectStartNode);
+    const toggleStartAnimationNode = () => {
+        setStartAnimationNode(!startAnimationNode);
     }
 
 	return (
 		<div>
-            <h1 className="header">{selectStartNode ? "Select Starting Node" : "Draw Your Graph"}</h1> 
+            <h1 className="header">{startAnimationNode ? "Select Starting Node" : "Draw Your Graph"}</h1> 
             <svg className={drawGraph ? "canvas" : "canvas-locked"} 
                 height={drawGraph ? CONTAINER_HEIGHT : LOCKED_MULTIPLIER * CONTAINER_HEIGHT}
                 width={drawGraph ? CONTAINER_WIDTH : LOCKED_MULTIPLIER * CONTAINER_WIDTH} 
@@ -526,7 +546,9 @@ export function Graph() {
                 <g>
                     {nodes.map((node, i) => (
                         <g key={i}>
-                            <circle className={`node ${
+                            <circle 
+                                    id={`node-${node.id}`}
+                                    className={`node ${
                                                 !startLineNode && hoverNode && hoverNode === node.id ? //hover actions
                                                     deleteMode ?
                                                         "delete-node-hover" //hovering on node to delete
@@ -537,13 +559,16 @@ export function Graph() {
                                                             drawGraph && !startLineNode ?
                                                                 "draw-node-connection" //hovering on node to start drawing arrow
                                                             : 
-                                                                selectStartNode ? 
+                                                                startAnimationNode ? 
                                                                     "select-start-node" //hovering on node to start search
                                                                 :
                                                                     "no-click-node"
                                                 :
                                                     drawGraph ?
-                                                        startLineNode && startLineNode.id === node.id && "draw-node-connection" //click on node and changes to orange
+                                                        startLineNode && startLineNode.id === node.id ? 
+                                                            "draw-node-connection" //click on node and changes to orange
+                                                        :
+                                                            ""
                                                     :
                                                         "no-click-node"
                                             }`}
@@ -555,7 +580,7 @@ export function Graph() {
                                     onMouseLeave = {(e) => handleElementHover(e, node.id)}
                             ></circle>
                             <text x={node.x} y={node.y}
-                                className={!drawGraph && !selectStartNode ? "no-click-node-number" : "node-number"}
+                                className={!drawGraph && !startAnimationNode ? "no-click-node-number" : "node-number"}
                                 textAnchor="middle"
                                 stroke="black"
                                 strokeWidth="0.5px"
@@ -571,7 +596,9 @@ export function Graph() {
 
                 {arrows.map((arrow, i) => (
                     <g key={i}>
-                        <line x1={arrow.nodex1} 
+                        <line 
+                            id={`arrow-${arrow.id}`}
+                            x1={arrow.nodex1} 
                             y1={arrow.nodey1} 
                             x2={arrow.nodex2} 
                             y2={arrow.nodey2} 
@@ -586,18 +613,20 @@ export function Graph() {
                                 y={(arrow.nodey1+arrow.nodey2) / 2 - 10}
                                 width="33"
                                 height="24"
-                            >
+                                >
                                 <input
-                                    className={`weight-input ${!drawGraph && "weight-input-disabled"}`}
+                                    className={`weight-input ${!drawGraph ? "weight-input-disabled" : ""}`}
                                     type="number"
                                     min="1"
                                     max="50"
                                     step="1"
                                     value={arrow.weight}
+                                    onMouseEnter={() => handleElementHover({type:"mouseenter", target:{className:{baseVal:"arrow"}}}, arrow.id)}
+                                    onMouseLeave={(e) => handleElementHover(e, arrow.id)}
                                     onChange={(e)=>updateArrowWeight(e, arrow.id)}
                                     onClick={deleteMode?()=>handleLinkClick(arrow):undefined}
                                     style={deleteMode ?{color:"transparent"}:{}} 
-                                /> {/*Adding the style avoids weird case where an input gets clicked when deleting another*/}
+                                /> {/*Adding the style to onClick handler avoids weird case where an input gets clicked when deleting another*/}
 
                             </foreignObject>
                         }
@@ -655,8 +684,8 @@ export function Graph() {
                     weighted={weighted}
                     directed={directed}
                     clearGraph={clearGraph}
-                    toggleSelectStartNode={toggleSelectStartNode}
-                    selectStartNode={selectStartNode}
+                    toggleStartAnimationNode={toggleStartAnimationNode}
+                    startAnimationNode={startAnimationNode}
             ></Sidebar>       
 		</div>
 	);

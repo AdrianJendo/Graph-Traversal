@@ -16,8 +16,8 @@ export function Sidebar(props) {
         toggleDirected,
         clearGraph,
         handleChangeGraphType,
-        toggleSelectStartNode,
-        selectStartNode
+        toggleStartAnimationNode,
+        startAnimationNode
     } = props;
 
     const [showPanel, setShowPanel] = useState(true);
@@ -49,16 +49,16 @@ export function Sidebar(props) {
                         </p>
                         <p 
                             className={`panel-element ${graphTypeMenu && !weighted ? "graphTypeSelected" : ""}`}
-                            onClick={graphTypeMenu ? ()=>toggleWeighted(false) : drawGraph ? toggleGraphTypeMenu : toggleSelectStartNode}
-                            style={selectStartNode ? {backgroundColor:"green"} : {}}
+                            onClick={graphTypeMenu ? ()=>toggleWeighted(false) : drawGraph ? toggleGraphTypeMenu : toggleStartAnimationNode}
+                            style={startAnimationNode ? {backgroundColor:"green"} : {}}
                         >
                             <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Change Graph Type" : "Depth-First Search"}</span>
                             <span className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`}>Unweighted</span>
                         </p>
                         <p 
                             className={`panel-element ${graphTypeMenu && weighted ? "graphTypeSelected" : ""}`}
-                            onClick={graphTypeMenu ? ()=>toggleWeighted(true) : drawGraph ? toggleMoveMode : toggleSelectStartNode}
-                            style={graphTypeMenu ? {} : isMoveMode || selectStartNode ? {backgroundColor:"green"} : {}}
+                            onClick={graphTypeMenu ? ()=>toggleWeighted(true) : drawGraph ? toggleMoveMode : toggleStartAnimationNode}
+                            style={graphTypeMenu ? {} : isMoveMode || startAnimationNode ? {backgroundColor:"green"} : {}}
                         >
                             <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Move Node" : "Breadth-First Search"}</span>
                             <span className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`}>Weighted</span>

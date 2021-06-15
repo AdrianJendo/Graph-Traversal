@@ -124,3 +124,11 @@ input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+.node-visited {
+	position: absolute;
+	border: 2px solid black;
+	fill: red;
+	stroke: black;
+	stroke-width: 2;
+}
