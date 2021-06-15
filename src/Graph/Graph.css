@@ -34,7 +34,6 @@
 
 .node {
     position: absolute;
-	border: 2px solid black;
 	fill: white;
 	stroke: black;
 	stroke-width: 2;
@@ -125,10 +124,24 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
-.node-visited {
-	position: absolute;
-	border: 2px solid black;
-	fill: red;
-	stroke: black;
+.node-seen {
+	stroke: green;
 	stroke-width: 2;
+}
+
+.node-visited {
+	fill: red;
+	stroke-width: 2;
+}
+
+.arrow-seen {
+	stroke:red;
+	stroke-width: 2; 
+	marker-end:url(#markerArrowDelete);
+}
+
+.arrow-visited {
+	stroke:cyan;
+	stroke-width: 2; 
+	marker-end:url(#markerArrowAnimation);
 }

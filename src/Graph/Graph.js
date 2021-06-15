@@ -157,80 +157,98 @@ export function Graph() {
                 return;
             }
             else if(node.id !== startLineNode.id){ //connect nodes with arrows
-                const angle = getAngle(startLineNode, node);
-                const arrow_width = ARROW_WIDTH; //px
-                let [start_offsetx, start_offsety] = getStartOffsets(startLineNode, angle);
-                let [end_offsetx, end_offsety] = getEndOffsets(node, angle, directed);                
-                    
-                //Check for overlap of arrows
-                let overlap = false;
-                let doubleEdgeNodePair = -1; //Look for two nodes connected by two directional edges
-                let i = 0;
-                while(i < arrows.length && !overlap && doubleEdgeNodePair === -1) {
-
-                    if(startLineNode.id === arrows[i].endID && node.id === arrows[i].startID && directed) {  //Mark index of double connected nodes
-                        doubleEdgeNodePair = i;
-                    }
-                    else if((startLineNode.id === arrows[i].startID && node.id === arrows[i].endID) || //Trying to draw same line between already connected nodes
-                            (startLineNode.id === arrows[i].endID && node.id === arrows[i].startID)){ //Undirected
-                        overlap = true;
-                    }
-                    else{
-                        ++i;
-                    }
-                }
-
-                if(overlap){
-                    alert("Nodes already connected");
-                }
-                else {
-                    let numLinks = numArrows;
-                    if(doubleEdgeNodePair >= 0){ //Calculate required offset adjustment for doubly connected nodes
-                        start_offsetx += arrow_width * Math.sin(angle);
-                        start_offsety += arrow_width * Math.cos(angle);
-                        end_offsetx += arrow_width * Math.sin(angle);
-                        end_offsety += arrow_width * Math.cos(angle);
-                        const replacement = {nodex1: arrows[doubleEdgeNodePair].nodex1 - arrow_width * Math.sin(angle), 
-                                            nodey1: arrows[doubleEdgeNodePair].nodey1 - arrow_width * Math.cos(angle), 
-                                            nodex2: arrows[doubleEdgeNodePair].nodex2 - arrow_width * Math.sin(angle), 
-                                            nodey2: arrows[doubleEdgeNodePair].nodey2 - arrow_width * Math.cos(angle),
-                                            startID: node.id,
-                                            endID: startLineNode.id,
-                                            id: numLinks,
-                                            weight: arrows[doubleEdgeNodePair].weight
-                                        };
-                        arrows.splice(doubleEdgeNodePair, 1, replacement); //Replace current line by updated offset
-                        numLinks++;
-                    }
-                    setArrows([...arrows, {nodex1:start_offsetx, nodey1:start_offsety, nodex2:end_offsetx, nodey2:end_offsety, startID:startLineNode.id, endID:node.id, id:numLinks, weight: 1}]);
-                    setNumArrows(numLinks+1);
-                }
+                connectNodes(node);
             }
             setAnimationArrow(null);
             setStartLineNode(null);
         }
         else if (e.button === 0 && startAnimationNode){ //selecting start node for graph traversal
-            const visited_order = graphSearch(node, nodes, arrows, directed, false);
-            for(let i = 0; i<visited_order.length; ++i){
+            const [visited_order, animations] = graphSearch(node, nodes, arrows, directed, false);
+
+            //Animate graph search
+            for(let i = 0; i<animations.length; ++i){
                 setTimeout( () => {
-                    console.log(visited_order[i]);
+
                     //Add an attribute to nodes and arrows (isAnimated) and set to true... then use css to handle the animation
                     //or use document.getElementById(`node-${node.row}-${node.col}`).className = 'node node-visited';
                     
-                    //Animate node
-                    if(i%2 === 0){ //nodes are even entries
-                        document.getElementById(`node-${visited_order[i].nodeID}`).classList.add("node-visited");
-                        // document.getElementById(`node-${visited_order[i]}`).className = "node-visited";
-                        console.log(document.getElementById(`node-${visited_order[i].nodeID}`).classList);
+                    if(animations[i].type === "node" && animations[i].stage === "seen"){ //Animate node
+                        document.getElementById(`node-${animations[i].id}`).classList.add("node-seen");
+                        console.log(document.getElementById(`node-${animations[i].id}`));
                     }
-                    else{
-                        //Animate arrow
-                        console.log(document.getElementById(`arrow-${visited_order[i].arrowID}`));
+                    else if(animations[i].type === "node"){
+                        document.getElementById(`node-${animations[i].id}`).classList.add("node-visited");
+                        console.log(document.getElementById(`node-${animations[i].id}`));
+                        // document.getElementById(`node-${animations[i]}`).className = "node-visited";
+                    }
+                    else if (animations[i].type === "arrow" && animations[i].stage === "seen"){ //Animate arrow
+                        document.getElementById(`arrow-${animations[i].id}`).classList.add("arrow-seen");
+                        console.log(document.getElementById(`arrow-${animations[i].id}`));
+                    }
+                    else if (animations[i].type === "arrow") {
+                        document.getElementById(`arrow-${animations[i].id}`).classList.add("arrow-visited");
+                        console.log(document.getElementById(`arrow-${animations[i].id}`));
                     }
                     
 
                 }, i * 1000); //*ANIMATION_SPEED_MS
             }
+        }
+    };
+
+    const handleMouseUp = (node) => {
+        if(drawGraph && startLineNode && node.id !== startLineNode.id && !deleteMode && !moveMode){ //connect nodes with arrows
+            connectNodes(node);
+            setAnimationArrow(null);
+            setStartLineNode(null);
+        }
+    };
+
+    const connectNodes = (node) => {
+        const angle = getAngle(startLineNode, node);
+        const arrow_width = ARROW_WIDTH; //px
+        let [start_offsetx, start_offsety] = getStartOffsets(startLineNode, angle);
+        let [end_offsetx, end_offsety] = getEndOffsets(node, angle, directed);                
+            
+        //Check for overlap of arrows
+        let connecting_arrows = 0; //Number of arrows currently between nodes
+        let doubleEdgeNodePair = -1; //Look for two nodes connected by two directional edges
+        for(let i = 0; i < arrows.length; i++) {
+            const arrow1 = startLineNode.id === arrows[i].endID && node.id === arrows[i].startID;
+            const arrow2 = startLineNode.id === arrows[i].startID && node.id === arrows[i].endID;
+
+            if(arrow1 || arrow2) { //Trying to draw same line between already connected nodes
+                connecting_arrows += 1;
+                doubleEdgeNodePair = i; //Mark index of double connected nodes
+            }
+        }
+
+        const overlap = (connecting_arrows === 2 && directed) || (connecting_arrows === 1 && !directed);
+
+        if(overlap){
+            alert("Nodes already connected");
+        }
+        else {
+            let numLinks = numArrows;
+            if(doubleEdgeNodePair >= 0){ //Calculate required offset adjustment for doubly connected nodes
+                start_offsetx += arrow_width * Math.sin(angle);
+                start_offsety += arrow_width * Math.cos(angle);
+                end_offsetx += arrow_width * Math.sin(angle);
+                end_offsety += arrow_width * Math.cos(angle);
+                const replacement = {nodex1: arrows[doubleEdgeNodePair].nodex1 - arrow_width * Math.sin(angle), 
+                                    nodey1: arrows[doubleEdgeNodePair].nodey1 - arrow_width * Math.cos(angle), 
+                                    nodex2: arrows[doubleEdgeNodePair].nodex2 - arrow_width * Math.sin(angle), 
+                                    nodey2: arrows[doubleEdgeNodePair].nodey2 - arrow_width * Math.cos(angle),
+                                    startID: node.id,
+                                    endID: startLineNode.id,
+                                    id: numLinks,
+                                    weight: arrows[doubleEdgeNodePair].weight
+                                };
+                arrows.splice(doubleEdgeNodePair, 1, replacement); //Replace current line by updated offset
+                numLinks++;
+            }
+            setArrows([...arrows, {nodex1:start_offsetx, nodey1:start_offsety, nodex2:end_offsetx, nodey2:end_offsety, startID:startLineNode.id, endID:node.id, id:numLinks, weight: 1}]);
+            setNumArrows(numLinks+1);
         }
     };
     
@@ -379,11 +397,16 @@ export function Graph() {
             }
         }
 
+        handleGraphReset();
+
         setNodes(nodes_copy);
         setArrows(arrows_copy);
         setDrawGraph(!drawGraph);
         setMoveMode(false);
         setDeleteMode(false);
+        setStartAnimationNode(false);
+        setAnimationArrow(null);
+        setStartLineNode(null);
         if(animationNode){
             handleMoveNodeInterrupt();
         }
@@ -524,6 +547,19 @@ export function Graph() {
         setStartAnimationNode(!startAnimationNode);
     }
 
+    const handleGraphReset = () => {
+        const nodes_copy = nodes.slice();
+        const arrows_copy = arrows.slice();
+
+        nodes_copy.forEach(node => {
+            document.getElementById(`node-${node.id}`).className.baseVal = "node";
+        });
+
+        arrows_copy.forEach(arrow => {
+            document.getElementById(`arrow-${arrow.id}`).className.baseVal = "arrow";
+        });
+    }
+
 	return (
 		<div>
             <h1 className="header">{startAnimationNode ? "Select Starting Node" : "Draw Your Graph"}</h1> 
@@ -540,6 +576,9 @@ export function Graph() {
                         </marker>
                         <marker id="markerArrowDelete" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
                             <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "red"}} />
+                        </marker>
+                        <marker id="markerArrowAnimation" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
+                            <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "cyan"}} />
                         </marker>
                     </defs>
                 }
@@ -576,6 +615,7 @@ export function Graph() {
                                     cx={node.x} 
                                     cy={node.y}
                                     onMouseDown = {(e) => handleNodeClicked(e, node)}
+                                    onMouseUp = {() => handleMouseUp(node)}
                                     onMouseEnter = {(e) => handleElementHover(e, node.id)}
                                     onMouseLeave = {(e) => handleElementHover(e, node.id)}
                             ></circle>
@@ -586,6 +626,7 @@ export function Graph() {
                                 strokeWidth="0.5px"
                                 alignmentBaseline="middle"
                                 onMouseDown = {(e) => handleNodeClicked(e, node)}
+                                onMouseUp = {() => handleMouseUp(node)}
                                 onMouseEnter = {(e) => handleElementHover(e, node.id)}
                             > 
                                 {node.id}
