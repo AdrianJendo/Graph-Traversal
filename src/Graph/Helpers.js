@@ -64,7 +64,7 @@ export const updateMovedNodeLinks = (startNode, endNode, index, links, double_co
     links.splice(index, 1, replacement);
 }
 
-//Get angle between nodes
+//Get angle between nodes (radians)
 export const getAngle = (startNode, endNode) => {
     const x_dist = endNode.x - startNode.x;
     const y_dist = -1 * (endNode.y - startNode.y); //Vertical distance measured from top = 0 so multiply by -1 to get y positive wrt bottom of canvas
@@ -90,7 +90,7 @@ export const getAngle = (startNode, endNode) => {
 
 //Offset of x,y wrt center of starting node
 export const getStartOffsets = (startNode, angle) => {
-    const start_offset = NODE_RADIUS
+    const start_offset = NODE_RADIUS+1;
     const start_offsetx = startNode.x + start_offset * Math.cos(angle);
     const start_offsety = startNode.y - start_offset * Math.sin(angle);
     return [start_offsetx, start_offsety];
@@ -98,7 +98,7 @@ export const getStartOffsets = (startNode, angle) => {
 
 //Offset x,y wrt center of end node
 export const getEndOffsets = (node, angle, directed=true) => {
-    const end_offset = directed ? NODE_RADIUS + 11 : NODE_RADIUS; //Head of the arrow is 10ish px
+    const end_offset = directed ? NODE_RADIUS + 15 : NODE_RADIUS+1;
     const end_offsetx = node.x - end_offset * Math.cos(angle);
     const end_offsety = node.y + end_offset * Math.sin(angle);
     return [end_offsetx, end_offsety];

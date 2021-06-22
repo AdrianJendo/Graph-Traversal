@@ -1,9 +1,10 @@
 import "./Graph.css";
 import React, { useState } from "react";
-import {Sidebar} from "./Sidebar"
-import {getGraphLinkedList} from "../Algorithms/DataStructure"
-import {graphSearch} from "../Algorithms/Algorithms"
-import {NODE_RADIUS, sortNodesArray, findNodeFromID, updateMovedNodeLinks, getAngle, getStartOffsets, getEndOffsets} from "./Helpers"
+import {Sidebar} from "./Sidebar.js"
+import {getGraphLinkedList} from "../Algorithms/DataStructure.js"
+import {graphSearch} from "../Algorithms/Algorithms.js"
+import {NODE_RADIUS, sortNodesArray, findNodeFromID, updateMovedNodeLinks, getAngle, getStartOffsets, getEndOffsets} from "./Helpers.js"
+import {animateSearch} from "./Animations.js"
 
 //Consts
 const LOCKED_MULTIPLIER = 1.2;
@@ -28,7 +29,8 @@ export function Graph() {
     const [originalNode, setOriginalNode] = useState(null); //outline of original node when when moving a node
     const [weighted, setWeighted] = useState(false); //true if graph is weighted
     const [directed, setDirected] = useState(true); //true if graph is directed
-    const [startAnimationNode, setStartAnimationNode] = useState(false);
+    const [algorithmType, setAlgorithmType] = useState("");
+    const [animate, setAnimate] = useState(false);
 
     const ARROW_WIDTH = weighted ? 11 : 8; //px
 
@@ -162,37 +164,13 @@ export function Graph() {
             setAnimationArrow(null);
             setStartLineNode(null);
         }
-        else if (e.button === 0 && startAnimationNode){ //selecting start node for graph traversal
-            const [visited_order, animations] = graphSearch(node, nodes, arrows, directed, false);
+        else if (e.button === 0 && (algorithmType === 'breadth-first-search' || algorithmType === 'depth-first-search')){ //selecting start node for graph search
+            const breadthFirstSearch = algorithmType === 'breadth-first-search'
+            const [visited_order, animations] = graphSearch(node, nodes, arrows, directed, breadthFirstSearch);
+            setAnimate(true);
 
-            //Animate graph search
-            for(let i = 0; i<animations.length; ++i){
-                setTimeout( () => {
-
-                    //Add an attribute to nodes and arrows (isAnimated) and set to true... then use css to handle the animation
-                    //or use document.getElementById(`node-${node.row}-${node.col}`).className = 'node node-visited';
-                    
-                    if(animations[i].type === "node" && animations[i].stage === "seen"){ //Animate node
-                        document.getElementById(`node-${animations[i].id}`).classList.add("node-seen");
-                        console.log(document.getElementById(`node-${animations[i].id}`));
-                    }
-                    else if(animations[i].type === "node"){
-                        document.getElementById(`node-${animations[i].id}`).classList.add("node-visited");
-                        console.log(document.getElementById(`node-${animations[i].id}`));
-                        // document.getElementById(`node-${animations[i]}`).className = "node-visited";
-                    }
-                    else if (animations[i].type === "arrow" && animations[i].stage === "seen"){ //Animate arrow
-                        document.getElementById(`arrow-${animations[i].id}`).classList.add("arrow-seen");
-                        console.log(document.getElementById(`arrow-${animations[i].id}`));
-                    }
-                    else if (animations[i].type === "arrow") {
-                        document.getElementById(`arrow-${animations[i].id}`).classList.add("arrow-visited");
-                        console.log(document.getElementById(`arrow-${animations[i].id}`));
-                    }
-                    
-
-                }, i * 1000); //*ANIMATION_SPEED_MS
-            }
+            // Animate graph search
+            animateSearch(visited_order, animations);
         }
     };
 
@@ -213,19 +191,21 @@ export function Graph() {
         //Check for overlap of arrows
         let connecting_arrows = 0; //Number of arrows currently between nodes
         let doubleEdgeNodePair = -1; //Look for two nodes connected by two directional edges
+        let overlap = false;
         for(let i = 0; i < arrows.length; i++) {
             const arrow1 = startLineNode.id === arrows[i].endID && node.id === arrows[i].startID;
             const arrow2 = startLineNode.id === arrows[i].startID && node.id === arrows[i].endID;
 
-            if(arrow1 || arrow2) { //Trying to draw same line between already connected nodes
+            if(arrow2){ //Trying to draw same line between already connected nodes
+                overlap = true;
+            }
+            else if(arrow1){
                 connecting_arrows += 1;
                 doubleEdgeNodePair = i; //Mark index of double connected nodes
             }
         }
 
-        const overlap = (connecting_arrows === 2 && directed) || (connecting_arrows === 1 && !directed);
-
-        if(overlap){
+        if(overlap || (connecting_arrows === 1 && !directed) || connecting_arrows > 1){
             alert("Nodes already connected");
         }
         else {
@@ -254,6 +234,8 @@ export function Graph() {
     
     //Check if deletemode and set colour accordingly (do same for links)
     const handleElementHover = (e, id) => {
+        if(animate) return;
+
         if(e.type === "mouseenter" && e.target.className.baseVal){
             if(e.target.className.baseVal.indexOf("node") === 0){
                 setHoverNode(id);
@@ -404,9 +386,10 @@ export function Graph() {
         setDrawGraph(!drawGraph);
         setMoveMode(false);
         setDeleteMode(false);
-        setStartAnimationNode(false);
+        setAlgorithmType("");
         setAnimationArrow(null);
         setStartLineNode(null);
+        setAnimate(false);
         if(animationNode){
             handleMoveNodeInterrupt();
         }
@@ -543,8 +526,13 @@ export function Graph() {
         setArrows(arrows_copy);
     }
 
-    const toggleStartAnimationNode = () => {
-        setStartAnimationNode(!startAnimationNode);
+    const toggleStartAnimationNode = (type) => {
+        if(type !== algorithmType){
+            setAlgorithmType(type);
+        }
+        else {
+            setAlgorithmType("");
+        }
     }
 
     const handleGraphReset = () => {
@@ -562,7 +550,7 @@ export function Graph() {
 
 	return (
 		<div>
-            <h1 className="header">{startAnimationNode ? "Select Starting Node" : "Draw Your Graph"}</h1> 
+            <h1 className="header">{algorithmType !== "" ? "Select Starting Node" : "Draw Your Graph"}</h1> 
             <svg className={drawGraph ? "canvas" : "canvas-locked"} 
                 height={drawGraph ? CONTAINER_HEIGHT : LOCKED_MULTIPLIER * CONTAINER_HEIGHT}
                 width={drawGraph ? CONTAINER_WIDTH : LOCKED_MULTIPLIER * CONTAINER_WIDTH} 
@@ -572,13 +560,13 @@ export function Graph() {
                 {directed && 
                     <defs>
                         <marker id="markerArrow" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
-                            <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "#000000"}} />
+                            <path d="M2,0 L2,7 L7,5 L2,3" style={{fill: "#000000"}} />
                         </marker>
                         <marker id="markerArrowDelete" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
-                            <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "red"}} />
+                            <path d="M2,0 L2,7 L7,5 L2,3" style={{fill: "red"}} />
                         </marker>
                         <marker id="markerArrowAnimation" markerWidth="8" markerHeight="8" refX="2" refY="5" orient="auto">
-                            <path d="M2,0 L2,8 L8,5 L2,2" style={{fill: "cyan"}} />
+                            <path d="M2,0 L2,7 L7,5 L2,3" style={{fill: "cyan"}} />
                         </marker>
                     </defs>
                 }
@@ -586,41 +574,44 @@ export function Graph() {
                     {nodes.map((node, i) => (
                         <g key={i}>
                             <circle 
-                                    id={`node-${node.id}`}
-                                    className={`node ${
-                                                !startLineNode && hoverNode && hoverNode === node.id ? //hover actions
-                                                    deleteMode ?
-                                                        "delete-node-hover" //hovering on node to delete
+                                id={`node-${node.id}`}
+                                className={`node ${
+                                            !startLineNode && hoverNode && hoverNode === node.id ? //hover actions
+                                                deleteMode ?
+                                                    "delete-node-hover" //hovering on node to delete
+                                                : 
+                                                    moveMode ?
+                                                        "move-node-hover" //hovering on node to move
                                                     : 
-                                                        moveMode ?
-                                                            "move-node-hover" //hovering on node to move
+                                                        drawGraph && !startLineNode ?
+                                                            "draw-node-connection" //hovering on node to start drawing arrow
                                                         : 
-                                                            drawGraph && !startLineNode ?
-                                                                "draw-node-connection" //hovering on node to start drawing arrow
-                                                            : 
-                                                                startAnimationNode ? 
-                                                                    "select-start-node" //hovering on node to start search
-                                                                :
-                                                                    "no-click-node"
-                                                :
-                                                    drawGraph ?
-                                                        startLineNode && startLineNode.id === node.id ? 
-                                                            "draw-node-connection" //click on node and changes to orange
-                                                        :
-                                                            ""
+                                                            algorithmType !== "" ? 
+                                                                "select-start-node" //hovering on node to start search
+                                                            :
+                                                                "no-click-node"
+                                            :
+                                                drawGraph ?
+                                                    startLineNode && startLineNode.id === node.id ? 
+                                                        "draw-node-connection" //click on node and changes to orange
                                                     :
-                                                        "no-click-node"
-                                            }`}
-                                    r={NODE_RADIUS} 
-                                    cx={node.x} 
-                                    cy={node.y}
-                                    onMouseDown = {(e) => handleNodeClicked(e, node)}
-                                    onMouseUp = {() => handleMouseUp(node)}
-                                    onMouseEnter = {(e) => handleElementHover(e, node.id)}
-                                    onMouseLeave = {(e) => handleElementHover(e, node.id)}
+                                                        ""
+                                                :
+                                                    "no-click-node"
+                                        }`}
+                                r={NODE_RADIUS} 
+                                cx={node.x} 
+                                cy={node.y}
+                                onMouseDown = {(e) => handleNodeClicked(e, node)}
+                                onMouseUp = {() => handleMouseUp(node)}
+                                onMouseEnter = {(e) => handleElementHover(e, node.id)}
+                                onMouseLeave = {(e) => handleElementHover(e, node.id)}
                             ></circle>
-                            <text x={node.x} y={node.y}
-                                className={!drawGraph && !startAnimationNode ? "no-click-node-number" : "node-number"}
+                            <text 
+                                id={`node-text-${node.id}`}
+                                x={node.x} 
+                                y={node.y}
+                                className={!drawGraph && algorithmType === "" ? "no-click-node-number" : "node-number"}
                                 textAnchor="middle"
                                 stroke="black"
                                 strokeWidth="0.5px"
@@ -634,45 +625,48 @@ export function Graph() {
                         </g>
                     ))}
                 </g>
+                <g>
+                    {arrows.map((arrow, i) => (
+                        <g key={i}>
+                            <line 
+                                id={`arrow-${arrow.id}`}
+                                x1={arrow.nodex1} 
+                                y1={arrow.nodey1} 
+                                x2={arrow.nodex2} 
+                                y2={arrow.nodey2} 
+                                className={`${deleteMode && hoverArrow && hoverArrow === arrow.id ? "delete-arrow-hover" : "arrow"}`}
+                                onClick={() => handleLinkClick(arrow)}
+                                onMouseEnter={(e) => handleElementHover(e, arrow.id)}
+                                onMouseLeave={(e) => handleElementHover(e, arrow.id)}
+                            />
+                            {weighted && 
+                                <foreignObject
+                                    x={(arrow.nodex1+arrow.nodex2) / 2 - 13}
+                                    y={(arrow.nodey1+arrow.nodey2) / 2 - 10}
+                                    width="33"
+                                    height="24"
+                                    >
+                                    <input
+                                        className={`weight-input ${!drawGraph ? "weight-input-disabled" : ""}`}
+                                        type="number"
+                                        min="1"
+                                        max="50"
+                                        step="1"
+                                        value={arrow.weight}
+                                        onMouseEnter={() => handleElementHover({type:"mouseenter", target:{className:{baseVal:"arrow"}}}, arrow.id)}
+                                        onMouseLeave={(e) => handleElementHover(e, arrow.id)}
+                                        onChange={(e)=>updateArrowWeight(e, arrow.id)}
+                                        onClick={deleteMode?()=>handleLinkClick(arrow):undefined}
+                                        style={deleteMode ?{color:"transparent"}:{}} 
+                                    /> {/*Adding the style to onClick handler avoids weird case where an input gets clicked when deleting another*/}
 
-                {arrows.map((arrow, i) => (
-                    <g key={i}>
-                        <line 
-                            id={`arrow-${arrow.id}`}
-                            x1={arrow.nodex1} 
-                            y1={arrow.nodey1} 
-                            x2={arrow.nodex2} 
-                            y2={arrow.nodey2} 
-                            className={`${deleteMode && hoverArrow && hoverArrow === arrow.id ? "delete-arrow-hover" : "arrow"}`}
-                            onClick={() => handleLinkClick(arrow)}
-                            onMouseEnter={(e) => handleElementHover(e, arrow.id)}
-                            onMouseLeave={(e) => handleElementHover(e, arrow.id)}
-                        />
-                        {weighted && 
-                            <foreignObject
-                                x={(arrow.nodex1+arrow.nodex2) / 2 - 13}
-                                y={(arrow.nodey1+arrow.nodey2) / 2 - 10}
-                                width="33"
-                                height="24"
-                                >
-                                <input
-                                    className={`weight-input ${!drawGraph ? "weight-input-disabled" : ""}`}
-                                    type="number"
-                                    min="1"
-                                    max="50"
-                                    step="1"
-                                    value={arrow.weight}
-                                    onMouseEnter={() => handleElementHover({type:"mouseenter", target:{className:{baseVal:"arrow"}}}, arrow.id)}
-                                    onMouseLeave={(e) => handleElementHover(e, arrow.id)}
-                                    onChange={(e)=>updateArrowWeight(e, arrow.id)}
-                                    onClick={deleteMode?()=>handleLinkClick(arrow):undefined}
-                                    style={deleteMode ?{color:"transparent"}:{}} 
-                                /> {/*Adding the style to onClick handler avoids weird case where an input gets clicked when deleting another*/}
+                                </foreignObject>
+                            }
+                        </g>
+                    ))}
+                </g>
 
-                            </foreignObject>
-                        }
-                    </g>
-                ))}
+                <g id = "animation-edges"></g>
 
                 {animationArrow &&
                     <g>
@@ -726,7 +720,7 @@ export function Graph() {
                     directed={directed}
                     clearGraph={clearGraph}
                     toggleStartAnimationNode={toggleStartAnimationNode}
-                    startAnimationNode={startAnimationNode}
+                    algorithmType={algorithmType}
             ></Sidebar>       
 		</div>
 	);

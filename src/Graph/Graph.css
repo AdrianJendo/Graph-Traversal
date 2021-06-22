@@ -71,7 +71,7 @@
 .delete-arrow-hover {
 	cursor: pointer;
 	stroke: red;
-	stroke-width:2;
+	stroke-width:3;
 	marker-end:url(#markerArrowDelete);
 }
 
@@ -94,7 +94,7 @@
 
 .arrow{
 	stroke:rgb(0,0,0);
-	stroke-width:2; 
+	stroke-width:3; 
 	marker-end:url(#markerArrow);
 }
 
@@ -122,26 +122,4 @@ input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
-}
-
-.node-seen {
-	stroke: green;
-	stroke-width: 2;
-}
-
-.node-visited {
-	fill: red;
-	stroke-width: 2;
-}
-
-.arrow-seen {
-	stroke:red;
-	stroke-width: 2; 
-	marker-end:url(#markerArrowDelete);
-}
-
-.arrow-visited {
-	stroke:cyan;
-	stroke-width: 2; 
-	marker-end:url(#markerArrowAnimation);
 }
