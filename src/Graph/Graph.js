@@ -1,7 +1,7 @@
 import "./Graph.css";
 import React, { useState } from "react";
 import {Sidebar} from "./Sidebar.js"
-import {getGraphLinkedList} from "../Algorithms/DataStructure.js"
+// import {getGraphLinkedList} from "../Algorithms/DataStructure.js"
 import {graphSearch} from "../Algorithms/Algorithms.js"
 import {NODE_RADIUS, sortNodesArray, findNodeFromID, updateMovedNodeLinks, getAngle, getStartOffsets, getEndOffsets} from "./Helpers.js"
 import {animateTraversal} from "./Animations.js"
@@ -538,14 +538,11 @@ export function Graph() {
         const nodes_copy = nodes.slice();
         const arrows_copy = arrows.slice();
 
-        console.log(nodes_copy, arrows_copy);
         nodes_copy.forEach(node => {
-            console.log(document.getElementById(`node-${node.id}`), document.getElementById(`node-${node.id}`).classList)
             document.getElementById(`node-${node.id}`).className.baseVal = "node";
         });
 
         arrows_copy.forEach(arrow => {
-            console.log(document.getElementById(`arrow-${arrow.id}`).className, document.getElementById(`arrow-${arrow.id}`).classList)
             document.getElementById(`arrow-${arrow.id}`).className.baseVal = "arrow";
         });
 

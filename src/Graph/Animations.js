@@ -14,7 +14,6 @@ export const animateTraversal = (visited_order, animations, setAnimateDone) => {
             setTimeout(()=>{
                 document.getElementById(`node-${animations[i].id}`).classList.add("node-visited");
                 document.getElementById(`node-text-${animations[i].id}`).classList.add("node-text-visited");
-                console.log(document.getElementById(`node-${animations[i].id}`));
                 // document.getElementById(`node-${animations[i]}`).className = "node-visited";
             }, i * ANIMATION_SPEED_MS);
         }
