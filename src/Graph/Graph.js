@@ -4,7 +4,7 @@ import {Sidebar} from "./Sidebar.js"
 import {getGraphLinkedList} from "../Algorithms/DataStructure.js"
 import {graphSearch} from "../Algorithms/Algorithms.js"
 import {NODE_RADIUS, sortNodesArray, findNodeFromID, updateMovedNodeLinks, getAngle, getStartOffsets, getEndOffsets} from "./Helpers.js"
-import {animateSearch} from "./Animations.js"
+import {animateTraversal} from "./Animations.js"
 
 //Consts
 const LOCKED_MULTIPLIER = 1.2;
@@ -31,6 +31,7 @@ export function Graph() {
     const [directed, setDirected] = useState(true); //true if graph is directed
     const [algorithmType, setAlgorithmType] = useState("");
     const [animate, setAnimate] = useState(false);
+    const [animateDone, setAnimateDone] = useState(false);
 
     const ARROW_WIDTH = weighted ? 11 : 8; //px
 
@@ -164,13 +165,13 @@ export function Graph() {
             setAnimationArrow(null);
             setStartLineNode(null);
         }
-        else if (e.button === 0 && (algorithmType === 'breadth-first-search' || algorithmType === 'depth-first-search')){ //selecting start node for graph search
+        else if (e.button === 0 && !animate && (algorithmType === 'breadth-first-search' || algorithmType === 'depth-first-search')){ //selecting start node for graph search
             const breadthFirstSearch = algorithmType === 'breadth-first-search'
             const [visited_order, animations] = graphSearch(node, nodes, arrows, directed, breadthFirstSearch);
             setAnimate(true);
 
             // Animate graph search
-            animateSearch(visited_order, animations);
+            animateTraversal(visited_order, animations, setAnimateDone);
         }
     };
 
@@ -386,10 +387,8 @@ export function Graph() {
         setDrawGraph(!drawGraph);
         setMoveMode(false);
         setDeleteMode(false);
-        setAlgorithmType("");
         setAnimationArrow(null);
         setStartLineNode(null);
-        setAnimate(false);
         if(animationNode){
             handleMoveNodeInterrupt();
         }
@@ -539,18 +538,26 @@ export function Graph() {
         const nodes_copy = nodes.slice();
         const arrows_copy = arrows.slice();
 
+        console.log(nodes_copy, arrows_copy);
         nodes_copy.forEach(node => {
+            console.log(document.getElementById(`node-${node.id}`), document.getElementById(`node-${node.id}`).classList)
             document.getElementById(`node-${node.id}`).className.baseVal = "node";
         });
 
         arrows_copy.forEach(arrow => {
+            console.log(document.getElementById(`arrow-${arrow.id}`).className, document.getElementById(`arrow-${arrow.id}`).classList)
             document.getElementById(`arrow-${arrow.id}`).className.baseVal = "arrow";
         });
+
+        setAlgorithmType("");
+        setAnimate(false);
+        setAnimateDone(false);
+        setHoverNode(null);
     }
 
 	return (
 		<div>
-            <h1 className="header">{algorithmType !== "" ? "Select Starting Node" : "Draw Your Graph"}</h1> 
+            <h1 className="header">{drawGraph ? "Draw Your Graph" : !animate ? algorithmType !== "" ? "Select Starting Node" : "Select Graph Traversal" : ""}</h1> 
             <svg className={drawGraph ? "canvas" : "canvas-locked"} 
                 height={drawGraph ? CONTAINER_HEIGHT : LOCKED_MULTIPLIER * CONTAINER_HEIGHT}
                 width={drawGraph ? CONTAINER_WIDTH : LOCKED_MULTIPLIER * CONTAINER_WIDTH} 
@@ -611,7 +618,7 @@ export function Graph() {
                                 id={`node-text-${node.id}`}
                                 x={node.x} 
                                 y={node.y}
-                                className={!drawGraph && algorithmType === "" ? "no-click-node-number" : "node-number"}
+                                className={(!drawGraph && algorithmType === "") || animate ? "no-click-node-number" : "node-number"}
                                 textAnchor="middle"
                                 stroke="black"
                                 strokeWidth="0.5px"
@@ -721,7 +728,11 @@ export function Graph() {
                     clearGraph={clearGraph}
                     toggleStartAnimationNode={toggleStartAnimationNode}
                     algorithmType={algorithmType}
-            ></Sidebar>       
+            ></Sidebar>
+
+            {animateDone && 
+                <button className="animation-reset-button" onClick={handleGraphReset}>Reset</button>
+            }
 		</div>
 	);
 }

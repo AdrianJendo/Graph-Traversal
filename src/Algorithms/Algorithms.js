@@ -11,27 +11,18 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
 
     let lastNode_ID = startNode.id;
 
-    // console.log(graph);
-
     do {
+        //Get current node id
         const cur_id = breadthFirstSearch ? unvisited.shift() : unvisited.pop(); //.pop for depth-first search
+
+        //push arrow pointing from previous node into animations
         if(unvisited_arrows.length){
             const last_node = breadthFirstSearch ? unvisited_arrows.shift() : unvisited_arrows.pop();
-            animations.push({type:"arrow", stage: "visited", id:last_node.arrowID, nodex1:last_node.nodex1, nodex2:last_node.nodex2, nodey1:last_node.nodey1, nodey2:last_node.nodey2}) //push arrow pointing from previous node
+            animations.push({type:"arrow", stage: "visited", id:last_node.arrowID, nodex1:last_node.nodex1, nodex2:last_node.nodex2, nodey1:last_node.nodey1, nodey2:last_node.nodey2})
             visited_arrows.push(last_node.arrowID);
         }
 
-        // if(lastNode_ID !== cur_id){
-        //     let i = 0;
-        //     while(lastNode_ID !== cur_id && i < graph[lastNode_ID].length && graph[lastNode_ID][i].endID !== cur_id){ //
-        //         ++i;
-        //     }
-        //     if(i < graph[lastNode_ID].length){
-        //         animations.push({type:"arrow", id:graph[lastNode_ID][i].arrowID}) //push arrow pointing from previous node
-        //     }
-        // }
-
-        visited.push(cur_id); //current node
+        visited.push(cur_id); //psuh id of current node to visited and add animation
         animations.push({type:"node", stage: "visited", id: cur_id});
         
         if(graph[cur_id].length){ //Check if there are connections at the current node
@@ -41,7 +32,6 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
                     animations.push({type:"arrow", stage: "seen", id:cur_node.arrowID, nodex1:cur_node.nodex1, nodex2:cur_node.nodex2, nodey1:cur_node.nodey1, nodey2:cur_node.nodey2});
                 }
                 if(!id_in_list(visited, graph[cur_id][i].endID) && !id_in_list(unvisited, graph[cur_id][i].endID) ){
-                    // animations.push({type:"node", stage: "seen", id:graph[cur_id][i].endID}); //Kind of useless
                     unvisited.push(graph[cur_id][i].endID);
                     unvisited_arrows.push(graph[cur_id][i]);
                 }
@@ -51,10 +41,10 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
         lastNode_ID = cur_id;
     } while(unvisited.length);
     
-    // console.log(visited, animations);
     return [visited, animations];
 }
 
+//Checks if given id is found in a list of objects
 const id_in_list = (list, id) => {
     for(let i = 0; i < list.length; i++){
         if(list[i] === id){
