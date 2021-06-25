@@ -167,11 +167,11 @@ export function Graph() {
         }
         else if (e.button === 0 && !animate && (algorithmType === 'breadth-first-search' || algorithmType === 'depth-first-search')){ //selecting start node for graph search
             const breadthFirstSearch = algorithmType === 'breadth-first-search'
-            const [visited_order, animations] = graphSearch(node, nodes, arrows, directed, breadthFirstSearch);
+            const animations = graphSearch(node, nodes, arrows, directed, breadthFirstSearch);
             setAnimate(true);
 
             // Animate graph search
-            animateTraversal(visited_order, animations, setAnimateDone);
+            animateTraversal(animations, setAnimateDone);
         }
     };
 

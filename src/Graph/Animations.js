@@ -4,7 +4,7 @@ const ANIMATION_SPEED_MS = 600; //ms
 const STEP_SIZE = 5; //ms
 
 //Animate graph traversal
-export const animateTraversal = (visited_order, animations, setAnimateDone) => {
+export const animateTraversal = (animations, setAnimateDone) => {
 
     //Add an attribute to nodes and arrows (isAnimated) and set to true... then use css to handle the animation
     //or use document.getElementById(`node-${node.row}-${node.col}`).className = 'node node-visited';

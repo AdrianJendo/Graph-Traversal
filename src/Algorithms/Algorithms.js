@@ -4,8 +4,9 @@ import {getGraphLinkedList} from "./DataStructure"
 export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFirstSearch = true) => {
     const graph = getGraphLinkedList(nodeList, arrowList, directed);
 
-    const visited = []; //Dictionary might give better performance (visited[cur.id] = 1 or something) for checking if node is visited
-    const visited_arrows = [];
+    const visited = {}; //Dictionary used to give better performance (visited[cur.id] = 1) for checking if node is visited
+    //const visited_order = []; //Need to use list to get the visited order
+    const visited_arrows = {};
     const unvisited = [startNode.id];
     const unvisited_arrows = [];
     const animations = []; //Animations for both arrows and nodes <-- [{type:arrow/node, stage:seen/visited,id:ID}, ...]
@@ -20,17 +21,18 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
             animations.push({type:"arrow", stage: "visited", id:last_node.arrowID, nodex1:last_node.nodex1, nodex2:last_node.nodex2, nodey1:last_node.nodey1, nodey2:last_node.nodey2})
         }
         
-        visited.push(cur_id); //psuh id of current node to visited and add animation
+        visited[cur_id] = 1; //push id of current node to visited and add animation
+        //visited_order.push(cur_id);
         animations.push({type:"node", stage: "visited", id: cur_id});
         
         if(graph[cur_id].length){ //Check if there are connections at the current node
             for(let i = 0; i<graph[cur_id].length; ++i){ //Add unvisited nodes to list
-                if(!id_in_list(visited_arrows, graph[cur_id][i].arrowID)){
+                if(!visited_arrows[graph[cur_id][i].arrowID]){
                     const cur_node = graph[cur_id][i];
                     animations.push({type:"arrow", stage: "seen", id:cur_node.arrowID, nodex1:cur_node.nodex1, nodex2:cur_node.nodex2, nodey1:cur_node.nodey1, nodey2:cur_node.nodey2});
-                    visited_arrows.push(cur_node.arrowID); //Avoid duplicating seen arrows
+                    visited_arrows[cur_node.arrowID] = 1; //Avoids duplicating seen arrows
                 }
-                if(!id_in_list(visited, graph[cur_id][i].endID) && !id_in_list(unvisited, graph[cur_id][i].endID) ){
+                if(!visited[graph[cur_id][i].endID] && !id_in_list(unvisited, graph[cur_id][i].endID) ){
                     unvisited.push(graph[cur_id][i].endID);
                     unvisited_arrows.push(graph[cur_id][i]);
                 }
@@ -39,7 +41,7 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
 
     } while(unvisited.length);
     
-    return [visited, animations];
+    return animations;
 }
 
 //Checks if given id is found in a list of objects
@@ -52,3 +54,7 @@ const id_in_list = (list, id) => {
 
     return false;
 }
+
+//Returns true if there is at least one cycle in the graph
+// export const findCycle = (startNode, nodeList, arrowList, directed) => {
+// }
