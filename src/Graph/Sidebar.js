@@ -17,7 +17,8 @@ export function Sidebar(props) {
         clearGraph,
         handleChangeGraphType,
         toggleStartAnimationNode,
-        algorithmType
+        algorithmType,
+        is_animation
     } = props;
 
     const [showPanel, setShowPanel] = useState(true);
@@ -48,7 +49,7 @@ export function Sidebar(props) {
                             </span>
                         </p>
                         <p 
-                            className={`panel-element ${graphTypeMenu && !weighted ? "graphTypeSelected" : ""}`}
+                            className={`panel-element ${is_animation ? "panel-unclickable" : graphTypeMenu && !weighted ? "graphTypeSelected" : ""}`}
                             onClick={graphTypeMenu ? ()=>toggleWeighted(false) : drawGraph ? toggleGraphTypeMenu : ()=>toggleStartAnimationNode("depth-first-search")}
                             style={algorithmType === "depth-first-search" ? {backgroundColor:"green"} : {}}
                         >
@@ -56,7 +57,7 @@ export function Sidebar(props) {
                             <span className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`}>Unweighted</span>
                         </p>
                         <p 
-                            className={`panel-element ${graphTypeMenu && weighted ? "graphTypeSelected" : ""}`}
+                            className={`panel-element ${is_animation ? "panel-unclickable" : graphTypeMenu && weighted ? "graphTypeSelected" : ""}`}
                             onClick={graphTypeMenu ? ()=>toggleWeighted(true) : drawGraph ? toggleMoveMode : ()=>toggleStartAnimationNode("breadth-first-search")}
                             style={graphTypeMenu ? {} : isMoveMode || algorithmType === "breadth-first-search" ? {backgroundColor:"green"} : {}}
                         >
@@ -64,23 +65,25 @@ export function Sidebar(props) {
                             <span className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`}>Weighted</span>
                         </p>
                         <p 
-                            className={`panel-element ${graphTypeMenu && !directed ? "graphTypeSelected" : ""}`}
-                            onClick={graphTypeMenu ? ()=>toggleDirected(false): drawGraph ? toggleDeleteMode : undefined}
-                            style={graphTypeMenu ? {} : isDeleteMode ? {backgroundColor:"green"} : {}}
+                            className={`panel-element ${is_animation ? "panel-unclickable" : graphTypeMenu && !directed ? "graphTypeSelected" : ""}`}
+                            onClick={graphTypeMenu ? ()=>toggleDirected(false): drawGraph ? toggleDeleteMode : ()=>toggleStartAnimationNode("dijkstra")}
+                            style={graphTypeMenu ? {} : isDeleteMode || algorithmType === "dijkstra" ? {backgroundColor:"green"} : {}}
                         >
                             <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Delete Node/Link" : "Dijkstra's"}</span>
                             <span className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`}>Undirected</span>
                         </p>
                         <p 
-                            className={`panel-element ${graphTypeMenu && directed ? "graphTypeSelected" : ""}`}
-                            onClick={graphTypeMenu ? ()=>toggleDirected(true) : drawGraph ? clearGraph : undefined}
+                            className={`panel-element ${is_animation ? "panel-unclickable" : graphTypeMenu && directed ? "graphTypeSelected" : ""}`}
+                            onClick={graphTypeMenu ? ()=>toggleDirected(true) : drawGraph ? clearGraph : ()=>toggleStartAnimationNode("A*")}
+                            style={graphTypeMenu ? {} : !drawGraph && algorithmType === "A*" ? {backgroundColor:"green"} : {}}
                         >
-                            <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Clear Graph" : "Find Cycle"}</span> {/*A**/}
+                            <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Clear Graph" : "A*"}</span>
                             <span className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`}>Directed</span>
                         </p>
-                        {false && !drawGraph && <p 
-                            className={"panel-element"}
-                            onClick={undefined}
+                        {!drawGraph && <p 
+                            className={`panel-element ${is_animation ? "panel-unclickable" : ""}`}
+                            onClick={()=>toggleStartAnimationNode("find-cycle")}
+                            style={algorithmType === "find-cycle" ? {backgroundColor:"green"} : {}}
                         >
                             <span className={'panel-item'}>Find Cycle</span>
                         </p>}

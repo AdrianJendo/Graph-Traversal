@@ -23,8 +23,8 @@
   @keyframes nodeVisitedAnimation {
     50% {
         r: 30;
-        fill: red;
-        stroke: red;
+        fill: darkorange;
+        stroke: darkorange;
     }
   
     100% {
@@ -47,27 +47,85 @@
     animation-iteration-count: 1;
     animation-fill-mode: forwards;
     */
-  }
-  
+}
+
 @keyframes nodeTextVisitedAnimation {
     0% {
         stroke: black;
     }
-  
+
     50% {
         stroke: white;
         fill: white;
         font-size: 20px;
     }
-    
+
     100% {
         stroke: black;
     }
-  }
+}
 
+.node-cycle-found {
+    animation-name: nodeCycleFoundAnimation;
+    animation-duration: 750ms;
+    animation-timing-function: ease-in-out;
+    animation-delay: 0;
+    animation-direction: alternate;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+    animation-play-state: running;
+}
+
+@keyframes nodeCycleFoundAnimation {
+    0% {
+        fill: rgba(0, 190, 218, 0.75);
+    }
+    50% {
+        r: 40;
+        fill: gold;
+        stroke: gold;
+    }
+  
+    100% {
+        r:20;
+        fill:rgba(50,205,50, 0.8);
+    }
+}
+
+.node-cycle-found-text {
+    animation-name: nodeCycleFoundTextAnimation;
+    animation-duration: 750ms;
+    animation-timing-function: ease-in-out;
+    animation-delay: 0;
+    animation-direction: alternate;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+    animation-play-state: running;
+
+    /*
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+    */
+}
+
+@keyframes nodeCycleFoundTextAnimation {
+    0% {
+        stroke: black;
+    }
+
+    50% {
+        stroke: white;
+        fill:white;
+        font-size: 20px;
+    }
+
+    100% {
+        stroke: black;
+    }
+}
 
 .arrow-seen {
-    stroke:red;
+    stroke:darkorange;
     stroke-width: 3; 
     marker-end:url(#markerArrowDelete);
 } 
@@ -80,7 +138,7 @@
 }
 
 .arrow-seen-animate {
-    stroke:red;
+    stroke:darkorange;
     stroke-width: 10; 
 } 
 

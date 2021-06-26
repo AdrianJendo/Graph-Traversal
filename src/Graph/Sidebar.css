@@ -226,3 +226,8 @@
         background-color: green;
     }
 }
+
+.panel-unclickable {
+    cursor: not-allowed;
+    pointer-events: none;
+}

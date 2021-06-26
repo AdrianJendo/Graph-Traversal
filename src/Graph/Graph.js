@@ -2,9 +2,9 @@ import "./Graph.css";
 import React, { useState } from "react";
 import {Sidebar} from "./Sidebar.js"
 // import {getGraphLinkedList} from "../Algorithms/DataStructure.js"
-import {graphSearch} from "../Algorithms/Algorithms.js"
+import {findCycle, graphSearch} from "../Algorithms/Algorithms.js"
 import {NODE_RADIUS, sortNodesArray, findNodeFromID, updateMovedNodeLinks, getAngle, getStartOffsets, getEndOffsets} from "./Helpers.js"
-import {animateTraversal} from "./Animations.js"
+import {animateTraversal, ANIMATION_SPEED_MS} from "./Animations.js"
 
 //Consts
 const LOCKED_MULTIPLIER = 1.2;
@@ -169,9 +169,27 @@ export function Graph() {
             const breadthFirstSearch = algorithmType === 'breadth-first-search'
             const animations = graphSearch(node, nodes, arrows, directed, breadthFirstSearch);
             setAnimate(true);
-
-            // Animate graph search
             animateTraversal(animations, setAnimateDone);
+        }
+        else if (e.button === 0 && !animate && algorithmType === 'find-cycle'){
+            const [is_cycle, animations] = findCycle(node, nodes, arrows, directed);
+            setAnimate(true);
+            animateTraversal(animations, setAnimateDone, is_cycle);
+            const last_element = animations.length-1;
+            setTimeout(() => {
+                if(is_cycle){
+                    document.getElementById(`node-${animations[last_element].id}`).classList.add("node-cycle-found");
+                    document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-cycle-found-text");
+                }
+                setTimeout(() => {
+                    if(is_cycle) {
+                        alert("Cycle found");
+                    }
+                    else {
+                        alert("No cycle found");
+                    }
+                }, 750);
+            }, ANIMATION_SPEED_MS * last_element);
         }
     };
 
@@ -725,6 +743,7 @@ export function Graph() {
                     clearGraph={clearGraph}
                     toggleStartAnimationNode={toggleStartAnimationNode}
                     algorithmType={algorithmType}
+                    is_animation={animate}
             ></Sidebar>
 
             {animateDone && 

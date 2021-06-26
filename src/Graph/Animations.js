@@ -1,16 +1,16 @@
 import "./Animations.css";
 import { getAngle } from "./Helpers";
-const ANIMATION_SPEED_MS = 600; //ms
+export const ANIMATION_SPEED_MS = 600; //ms
 const STEP_SIZE = 5; //ms
 
 //Animate graph traversal
-export const animateTraversal = (animations, setAnimateDone) => {
+export const animateTraversal = (animations, setAnimateDone, find_cycle = false) => {
 
     //Add an attribute to nodes and arrows (isAnimated) and set to true... then use css to handle the animation
     //or use document.getElementById(`node-${node.row}-${node.col}`).className = 'node node-visited';
 
     for(let i = 0; i<animations.length; ++i){
-        if(animations[i].type === "node"){ //Animate node (only have visited property in dict)
+        if(animations[i].type === "node" && !(find_cycle && i===animations.length-1)){ //Animate node (only have visited property in dict)
             setTimeout(()=>{
                 document.getElementById(`node-${animations[i].id}`).classList.add("node-visited");
                 document.getElementById(`node-text-${animations[i].id}`).classList.add("node-text-visited");
@@ -49,5 +49,5 @@ export const animateTraversal = (animations, setAnimateDone) => {
     //Signal that animation is done to make reset button available
     setTimeout(() => {
         setAnimateDone(true);
-    }, ANIMATION_SPEED_MS * animations.length);
+    }, ANIMATION_SPEED_MS * animations.length + 200);
 }

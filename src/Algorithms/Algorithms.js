@@ -1,8 +1,13 @@
 import {getGraphLinkedList} from "./DataStructure"
 
 //Returns list of visited nodes in the order they were visited
-export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFirstSearch = true) => {
+export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFirstSearch = true, findCycle = false) => {
     const graph = getGraphLinkedList(nodeList, arrowList, directed);
+
+    //Always use depth first search for find cycle
+    if (findCycle) {
+        breadthFirstSearch = false;
+    }
 
     const visited = {}; //Dictionary used to give better performance (visited[cur.id] = 1) for checking if node is visited
     //const visited_order = []; //Need to use list to get the visited order
@@ -30,17 +35,27 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
                     unvisited.push(graph[cur_id][i].endID);
                     unvisited_arrows.push(graph[cur_id][i]);
                 }
+                else if (findCycle && graph[cur_id][i].arrowID !== last_adjacency.arrowID){ //Node seen was already visited, therefore there is cycle (handles undirected case)
+                    //Animate arrow
+                    const adjacency = graph[cur_id][i]
+                    animations.push({type:"arrow", id:adjacency.arrowID, nodex1:adjacency.nodex1, nodex2:adjacency.nodex2, nodey1:adjacency.nodey1, nodey2:adjacency.nodey2});
+                    //Animate node with special status
+                    animations.push({type:"node", id: adjacency.endID});
+                    return [true, animations];
+                }
             }
         }
     } while(unvisited.length);
+
+    if(findCycle){
+        return [false, animations];
+    }
     
     return animations;
 }
 
 //Returns true if there is at least one cycle in the graph
 export const findCycle = (startNode, nodeList, arrowList, directed) => {
-    
-    const animations = []; //Animations for both arrows and nodes
-    
-    return [false, animations];
+    //Graph search can be implemented by using depth first search
+    return graphSearch(startNode, nodeList, arrowList, directed, false, true);
 }
