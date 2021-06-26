@@ -27,31 +27,22 @@ export const animateTraversal = (animations, setAnimateDone) => {
             const startX = cur_anim.nodex1;
             const startY = cur_anim.nodey1;
             //Initialize entire animated arrow at start
-            if(cur_anim.stage === "seen"){
-                edges.innerHTML += `<line id="temp-${cur_anim.id}-seen" x1=${startX} y1=${startY} x2=${startX} y2=${startY} class="arrow-seen-animate" ></line>`;
-            }
-            else{
-                edges.innerHTML += `<line id="temp-${cur_anim.id}-visited" x1=${startX} y1=${startY} x2=${startX} y2=${startY} class="arrow-visited-animate" ></line>`;
-            }
+            edges.innerHTML += `<line id="temp-${cur_anim.id}-visited" x1=${startX} y1=${startY} x2=${startX} y2=${startY} class="arrow-visited-animate" ></line>`;
+
             //Slowly increase length until arrow reaches end coordinates
             for(let j = 0; j<increment; ++j){
                 setTimeout( () => {
                     const curX = startX + j / increment * distance * Math.cos(angle);
                     const curY = startY - j / increment * distance * Math.sin(angle);
-                    document.getElementById(`temp-${cur_anim.id}-${cur_anim.stage}`).setAttribute("x2", `${curX}`);
-                    document.getElementById(`temp-${cur_anim.id}-${cur_anim.stage}`).setAttribute("y2", `${curY}`);
+                    document.getElementById(`temp-${cur_anim.id}-visited`).setAttribute("x2", `${curX}`);
+                    document.getElementById(`temp-${cur_anim.id}-visited`).setAttribute("y2", `${curY}`);
                 }, i * ANIMATION_SPEED_MS + j * STEP_SIZE); //Go until i+1
             }
 
             //Remove temporary arrow and add style to animated arrow
             setTimeout(() => {
-                document.getElementById(`temp-${cur_anim.id}-${cur_anim.stage}`).remove();
-                if(cur_anim.stage === "seen"){
-                    document.getElementById(`arrow-${cur_anim.id}`).classList.add("arrow-seen");
-                }
-                else{
-                    document.getElementById(`arrow-${cur_anim.id}`).classList.add("arrow-visited");
-                }
+                document.getElementById(`temp-${cur_anim.id}-visited`).remove();
+                document.getElementById(`arrow-${cur_anim.id}`).classList.add("arrow-visited");
             }, (i+1) * ANIMATION_SPEED_MS);
         }
     }
