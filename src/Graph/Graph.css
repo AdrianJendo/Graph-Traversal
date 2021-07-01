@@ -139,4 +139,9 @@ input::-webkit-inner-spin-button {
 	display: inline-block;
 	font-size: 16px;
 	cursor: pointer;
-  }
+}
+
+.weight-hidden {
+	fill: white;
+	stroke: white;
+}

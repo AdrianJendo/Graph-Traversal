@@ -1,6 +1,6 @@
-import {getGraphLinkedList} from "./DataStructure"
+import {getGraphLinkedList} from "./DataStructure";
 
-//Returns list of visited nodes in the order they were visited
+//Returns list of visited nodes and arrows in the order they were visited
 export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFirstSearch = true, findCycle = false) => {
     const graph = getGraphLinkedList(nodeList, arrowList, directed);
 
@@ -9,8 +9,8 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
         breadthFirstSearch = false;
     }
 
-    const visited = {}; //Dictionary used to give better performance (visited[cur.id] = 1) for checking if node is visited
-    //const visited_order = []; //Need to use list to get the visited order
+    const visited_nodes = {}; //Dictionary used to give better performance (visited_nodes[cur.id] = 1) for checking if node is visited
+    //const visited_order = []; //Need to use list to get the visited_nodes order
     const unvisited = [startNode.id];
     const unvisited_arrows = [];
     const animations = []; //Animations for both arrows and nodes <-- [{type:arrow/node, stage:seen/visited,id:ID}, ...]
@@ -21,27 +21,33 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
         const last_adjacency = unvisited_arrows.length ? breadthFirstSearch ? unvisited_arrows.shift() : unvisited_arrows.pop() : null;
 
         //push arrow pointing from previous node into animations
-        if(last_adjacency && !visited[last_adjacency.endID]){
+        if(last_adjacency && !visited_nodes[last_adjacency.endID]){
             animations.push({type:"arrow", id:last_adjacency.arrowID, nodex1:last_adjacency.nodex1, nodex2:last_adjacency.nodex2, nodey1:last_adjacency.nodey1, nodey2:last_adjacency.nodey2});
         }
         
         animations.push({type:"node", id: cur_id});
         //visited_order.push(cur_id);
-        visited[cur_id] = 1; //push id of current node to visited and add animation
+        visited_nodes[cur_id] = true; //push id of current node to visited_nodes and add animation
         
         if(graph[cur_id].length){ //Check if there are connections at the current node
             for(let i = 0; i<graph[cur_id].length; ++i){ //Add unvisited nodes to list
-                if(!visited[graph[cur_id][i].endID]){
+                if(!visited_nodes[graph[cur_id][i].endID]){
                     unvisited.push(graph[cur_id][i].endID);
                     unvisited_arrows.push(graph[cur_id][i]);
                 }
                 else if (findCycle && graph[cur_id][i].arrowID !== last_adjacency.arrowID){ //Node seen was already visited, therefore there is cycle (handles undirected case)
-                    //Animate arrow
-                    const adjacency = graph[cur_id][i]
-                    animations.push({type:"arrow", id:adjacency.arrowID, nodex1:adjacency.nodex1, nodex2:adjacency.nodex2, nodey1:adjacency.nodey1, nodey2:adjacency.nodey2});
-                    //Animate node with special status
-                    animations.push({type:"node", id: adjacency.endID});
-                    return [true, animations];
+                    // debugger;
+                    for(let j=0; j<graph[graph[cur_id][i].endID].length; ++j){
+                        const edge = graph[graph[cur_id][i].endID][j];
+                        if(visited_nodes[edge.endID]){
+                            //Animate arrow
+                            const edge = graph[cur_id][i]
+                            animations.push({type:"arrow", id:edge.arrowID, nodex1:edge.nodex1, nodex2:edge.nodex2, nodey1:edge.nodey1, nodey2:edge.nodey2});
+                            //Animate node (special animation)
+                            animations.push({type:"node", id: edge.endID});
+                            return [true, animations];
+                        }
+                    }
                 }
             }
         }
@@ -52,10 +58,10 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
     }
     
     return animations;
-}
+};
 
 //Returns true if there is at least one cycle in the graph
 export const findCycle = (startNode, nodeList, arrowList, directed) => {
     //Graph search can be implemented by using depth first search
     return graphSearch(startNode, nodeList, arrowList, directed, false, true);
-}
+};

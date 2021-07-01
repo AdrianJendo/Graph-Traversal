@@ -1,15 +1,16 @@
 import "./Graph.css";
 import React, { useState } from "react";
-import {Sidebar} from "./Sidebar.js"
-// import {getGraphLinkedList} from "../Algorithms/DataStructure.js"
-import {findCycle, graphSearch} from "../Algorithms/Algorithms.js"
-import {NODE_RADIUS, sortNodesArray, findNodeFromID, updateMovedNodeLinks, getAngle, getStartOffsets, getEndOffsets} from "./Helpers.js"
-import {animateTraversal, ANIMATION_SPEED_MS} from "./Animations.js"
+import {Sidebar} from "./Sidebar.js";
+import {findCycle, graphSearch} from "../Algorithms/GraphSearch";
+import {Dijkstra} from "../Algorithms/Dijkstra";
+import {AStar} from "../Algorithms/AStar";
+import {NODE_RADIUS, sortNodesArray, findNodeFromID, updateMovedNodeLinks, getAngle, getStartOffsets, getEndOffsets} from "./Helpers.js";
+import {animateTraversal, animateDijkstra, animateAStar} from "./Animations.js";
 
 //Consts
 const LOCKED_MULTIPLIER = 1.2;
 const CONTAINER_HEIGHT = 600;
-const CONTAINER_WIDTH = 1200;
+export const CONTAINER_WIDTH = 1200;
 const BUFFER = 15;
 
 export function Graph() {
@@ -32,6 +33,7 @@ export function Graph() {
     const [algorithmType, setAlgorithmType] = useState("");
     const [animate, setAnimate] = useState(false);
     const [animateDone, setAnimateDone] = useState(false);
+    const [animationStartNode, setAnimationStartNode] = useState(null); //start node for A* Algorithm
 
     const ARROW_WIDTH = weighted ? 11 : 8; //px
 
@@ -165,31 +167,37 @@ export function Graph() {
             setAnimationArrow(null);
             setStartLineNode(null);
         }
-        else if (e.button === 0 && !animate && (algorithmType === 'breadth-first-search' || algorithmType === 'depth-first-search')){ //selecting start node for graph search
-            const breadthFirstSearch = algorithmType === 'breadth-first-search'
-            const animations = graphSearch(node, nodes, arrows, directed, breadthFirstSearch);
-            setAnimate(true);
-            animateTraversal(animations, setAnimateDone);
-        }
-        else if (e.button === 0 && !animate && algorithmType === 'find-cycle'){
-            const [is_cycle, animations] = findCycle(node, nodes, arrows, directed);
-            setAnimate(true);
-            animateTraversal(animations, setAnimateDone, is_cycle);
-            const last_element = animations.length-1;
-            setTimeout(() => {
-                if(is_cycle){
-                    document.getElementById(`node-${animations[last_element].id}`).classList.add("node-cycle-found");
-                    document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-cycle-found-text");
+        else if (e.button === 0 && !animate) {
+            if(algorithmType === 'breadth-first-search' || algorithmType === 'depth-first-search'){ //selecting start node for graph search
+                const breadthFirstSearch = algorithmType === 'breadth-first-search'
+                const animations = graphSearch(node, nodes, arrows, directed, breadthFirstSearch);
+                setAnimate(true);
+                animateTraversal(animations, setAnimateDone);
+            }
+            else if (algorithmType === 'find-cycle') {
+                const [is_cycle, animations] = findCycle(node, nodes, arrows, directed);
+                setAnimate(true);
+                animateTraversal(animations, setAnimateDone, [is_cycle]);
+            }
+            else if (algorithmType === 'dijkstra') {
+                const [node_weights, animations] = Dijkstra(node, nodes, arrows, directed);
+                setAnimate(true);
+                animateDijkstra(animations, node_weights, setAnimateDone);
+            }
+            else if (algorithmType === "A*") {
+                if(animationStartNode && animationStartNode.id !== node.id){
+                    const animations = AStar(animationStartNode, node, nodes, arrows, directed);
+                    setAnimate(true);
+                    animateAStar(animations, setAnimateDone);
+                    //Add another animation to show the path that was found
                 }
-                setTimeout(() => {
-                    if(is_cycle) {
-                        alert("Cycle found");
-                    }
-                    else {
-                        alert("No cycle found");
-                    }
-                }, 750);
-            }, ANIMATION_SPEED_MS * last_element);
+                else if (!animationStartNode) {
+                    setAnimationStartNode(node);
+                }
+                else {
+                    setAnimationStartNode(null);
+                }
+            }
         }
     };
 
@@ -558,6 +566,10 @@ export function Graph() {
 
         nodes_copy.forEach(node => {
             document.getElementById(`node-${node.id}`).className.baseVal = "node";
+            document.getElementById(`node-text-${node.id}`).className.baseVal = "node-number";
+            if(algorithmType === "dijkstra"){
+                document.getElementById(`node-weight-${node.id}`).className.baseVal = "weight-hidden";
+            }
         });
 
         arrows_copy.forEach(arrow => {
@@ -568,11 +580,26 @@ export function Graph() {
         setAnimate(false);
         setAnimateDone(false);
         setHoverNode(null);
+        setAnimationStartNode(null);
     }
 
 	return (
 		<div>
-            <h1 className="header">{drawGraph ? "Draw Your Graph" : !animate ? algorithmType !== "" ? "Select Starting Node" : "Select Graph Traversal" : ""}</h1> 
+            <h1 className="header">{
+                drawGraph ?
+                    "Draw Your Graph"
+                :
+                    !animate ?
+                        algorithmType !== "" ?
+                            animationStartNode ?
+                                "Select End Node" 
+                            :
+                                "Select Starting Node"
+                        :
+                            "Select Graph Traversal"
+                    :
+                        ""
+            }</h1> 
             <svg className={drawGraph ? "canvas" : "canvas-locked"} 
                 height={drawGraph ? CONTAINER_HEIGHT : LOCKED_MULTIPLIER * CONTAINER_HEIGHT}
                 width={drawGraph ? CONTAINER_WIDTH : LOCKED_MULTIPLIER * CONTAINER_WIDTH} 
@@ -619,7 +646,10 @@ export function Graph() {
                                                     :
                                                         ""
                                                 :
-                                                    "no-click-node"
+                                                    animationStartNode && animationStartNode.id === node.id ?
+                                                        "select-start-node"
+                                                    :
+                                                        "no-click-node"
                                         }`}
                                 r={NODE_RADIUS} 
                                 cx={node.x} 
@@ -644,6 +674,21 @@ export function Graph() {
                             > 
                                 {node.id}
                             </text>
+                            {algorithmType === "dijkstra" && animate &&
+                                <text 
+                                    id={`node-weight-${node.id}`}
+                                    x={node.x} 
+                                    y={node.y+35}
+                                    className={"weight-hidden"}
+                                    textAnchor="middle"
+                                    strokeWidth="0.5px"
+                                    alignmentBaseline="middle"
+                                    onMouseDown = {(e) => handleNodeClicked(e, node)}
+                                    onMouseUp = {() => handleMouseUp(node)}
+                                    onMouseEnter = {(e) => handleElementHover(e, node.id)}
+                                > 
+                                </text>
+                            }
                         </g>
                     ))}
                 </g>
@@ -681,7 +726,6 @@ export function Graph() {
                                         onClick={deleteMode?()=>handleLinkClick(arrow):undefined}
                                         style={deleteMode ?{color:"transparent"}:{}} 
                                     /> {/*Adding the style to onClick handler avoids weird case where an input gets clicked when deleting another*/}
-
                                 </foreignObject>
                             }
                         </g>
