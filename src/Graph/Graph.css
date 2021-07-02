@@ -142,6 +142,6 @@ input::-webkit-inner-spin-button {
 }
 
 .weight-hidden {
-	fill: white;
-	stroke: white;
+	fill: none;
+	stroke: none;
 }

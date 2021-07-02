@@ -116,7 +116,6 @@
     }
 }
 
-
 .node-unreachable-text-visited {
     animation-name: nodeTextVisitedAnimation;
     animation-duration: 1000ms;
@@ -140,6 +139,19 @@
 }
 
 .node-weight-visited {
-    stroke: black;
-    fill: black;
+    animation-name: nodeWeightVisitedAnimation;
+    animation-duration: 150ms;
+    animation-timing-function: ease-in-out;
+    animation-delay: 600ms;
+    animation-direction: alternate;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+    animation-play-state: running;
+}
+
+@keyframes nodeWeightVisitedAnimation {
+    100% {
+        stroke: hotpink;
+        fill: hotpink;
+    }
 }

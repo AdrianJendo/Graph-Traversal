@@ -134,7 +134,7 @@ export const animateAStar = (animations, endNodeReachable, setAnimateDone) => {
             document.getElementById(`node-${animations[last_element].id}`).classList.add("node-unreachable");
             document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-unreachable-text-visited");
             setTimeout(() => {
-                alert("End Node not Reachable")
+                alert("End Node Not Reachable")
             }, 1000);
         }, ANIMATION_SPEED_MS * last_element);
     }

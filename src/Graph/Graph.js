@@ -8,9 +8,9 @@ import {NODE_RADIUS, sortNodesArray, findNodeFromID, updateMovedNodeLinks, getAn
 import {animateTraversal, animateDijkstra, animateAStar} from "./Animations.js";
 
 //Consts
-const LOCKED_MULTIPLIER = 1.2;
-const CONTAINER_HEIGHT = 600;
-export const CONTAINER_WIDTH = 1200;
+const LOCKED_MULTIPLIER = 1.44;
+const CONTAINER_HEIGHT = 500;
+export const CONTAINER_WIDTH = 1000;
 const BUFFER = 15;
 
 export function Graph() {
@@ -620,6 +620,49 @@ export function Graph() {
                         </marker>
                     </defs>
                 }
+
+                <g>
+                    {arrows.map((arrow, i) => (
+                        <g key={i}>
+                            <line 
+                                id={`arrow-${arrow.id}`}
+                                x1={arrow.nodex1} 
+                                y1={arrow.nodey1} 
+                                x2={arrow.nodex2} 
+                                y2={arrow.nodey2} 
+                                className={`${deleteMode && hoverArrow && hoverArrow === arrow.id ? "delete-arrow-hover" : "arrow"}`}
+                                onClick={() => handleLinkClick(arrow)}
+                                onMouseEnter={(e) => handleElementHover(e, arrow.id)}
+                                onMouseLeave={(e) => handleElementHover(e, arrow.id)}
+                            />
+                            {weighted && 
+                                <foreignObject
+                                    x={(arrow.nodex1+arrow.nodex2) / 2 - 13}
+                                    y={(arrow.nodey1+arrow.nodey2) / 2 - 10}
+                                    width="33"
+                                    height="24"
+                                    >
+                                    <input
+                                        className={`weight-input ${!drawGraph ? "weight-input-disabled" : ""}`}
+                                        type="number"
+                                        min="1"
+                                        max="50"
+                                        step="1"
+                                        value={arrow.weight}
+                                        onMouseEnter={() => handleElementHover({type:"mouseenter", target:{className:{baseVal:"arrow"}}}, arrow.id)}
+                                        onMouseLeave={(e) => handleElementHover(e, arrow.id)}
+                                        onChange={(e)=>updateArrowWeight(e, arrow.id)}
+                                        onClick={deleteMode?()=>handleLinkClick(arrow):undefined}
+                                        style={deleteMode ?{color:"transparent"}:{}} 
+                                    /> {/*Adding the style to onClick handler avoids weird case where an input gets clicked when deleting another*/}
+                                </foreignObject>
+                            }
+                        </g>
+                    ))}
+                </g>
+
+                <g id = "animation-edges"></g>
+
                 <g>
                     {nodes.map((node, i) => (
                         <g key={i}>
@@ -679,7 +722,7 @@ export function Graph() {
                                 <text 
                                     id={`node-weight-${node.id}`}
                                     x={node.x} 
-                                    y={node.y+35}
+                                    y={node.y+37.5}
                                     className={"weight-hidden"}
                                     textAnchor="middle"
                                     strokeWidth="0.5px"
@@ -693,47 +736,6 @@ export function Graph() {
                         </g>
                     ))}
                 </g>
-                <g>
-                    {arrows.map((arrow, i) => (
-                        <g key={i}>
-                            <line 
-                                id={`arrow-${arrow.id}`}
-                                x1={arrow.nodex1} 
-                                y1={arrow.nodey1} 
-                                x2={arrow.nodex2} 
-                                y2={arrow.nodey2} 
-                                className={`${deleteMode && hoverArrow && hoverArrow === arrow.id ? "delete-arrow-hover" : "arrow"}`}
-                                onClick={() => handleLinkClick(arrow)}
-                                onMouseEnter={(e) => handleElementHover(e, arrow.id)}
-                                onMouseLeave={(e) => handleElementHover(e, arrow.id)}
-                            />
-                            {weighted && 
-                                <foreignObject
-                                    x={(arrow.nodex1+arrow.nodex2) / 2 - 13}
-                                    y={(arrow.nodey1+arrow.nodey2) / 2 - 10}
-                                    width="33"
-                                    height="24"
-                                    >
-                                    <input
-                                        className={`weight-input ${!drawGraph ? "weight-input-disabled" : ""}`}
-                                        type="number"
-                                        min="1"
-                                        max="50"
-                                        step="1"
-                                        value={arrow.weight}
-                                        onMouseEnter={() => handleElementHover({type:"mouseenter", target:{className:{baseVal:"arrow"}}}, arrow.id)}
-                                        onMouseLeave={(e) => handleElementHover(e, arrow.id)}
-                                        onChange={(e)=>updateArrowWeight(e, arrow.id)}
-                                        onClick={deleteMode?()=>handleLinkClick(arrow):undefined}
-                                        style={deleteMode ?{color:"transparent"}:{}} 
-                                    /> {/*Adding the style to onClick handler avoids weird case where an input gets clicked when deleting another*/}
-                                </foreignObject>
-                            }
-                        </g>
-                    ))}
-                </g>
-
-                <g id = "animation-edges"></g>
 
                 {animationArrow &&
                     <g>
