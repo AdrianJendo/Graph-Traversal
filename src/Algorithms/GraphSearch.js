@@ -36,7 +36,6 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
                     unvisited_arrows.push(graph[cur_id][i]);
                 }
                 else if (findCycle && graph[cur_id][i].arrowID !== last_adjacency.arrowID){ //Node seen was already visited, therefore there is cycle (handles undirected case)
-                    // debugger;
                     for(let j=0; j<graph[graph[cur_id][i].endID].length; ++j){
                         const edge = graph[graph[cur_id][i].endID][j];
                         if(visited_nodes[edge.endID]){

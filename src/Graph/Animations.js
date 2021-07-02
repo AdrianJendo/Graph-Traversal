@@ -109,8 +109,8 @@ export const animateDijkstra = (animations, node_weights, setAnimateDone) => {
 };
 
 //Animate A* Algorithm
-export const animateAStar = (animations, setAnimateDone) => {
-    for(let i = 0; i<animations.length; ++i){
+export const animateAStar = (animations, endNodeReachable, setAnimateDone) => {
+    for(let i = 0; i<animations.length-1; ++i){
         if(animations[i].type === "node"){ //Animate node
             setTimeout(()=>{
                 document.getElementById(`node-${animations[i].id}`).classList.add("node-visited");
@@ -121,8 +121,28 @@ export const animateAStar = (animations, setAnimateDone) => {
             animateArrow(animations[i], i);
         }
     }
+    console.log(animations);
+    const last_element = animations.length-1;
+    if(endNodeReachable){
+        setTimeout(()=>{
+            document.getElementById(`node-${animations[last_element].id}`).classList.add("node-cycle-found");
+            document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-cycle-found-text");
+        }, last_element * ANIMATION_SPEED_MS);
+    }
+    else {
+        setTimeout(() => {
+            document.getElementById(`node-${animations[last_element].id}`).classList.add("node-unreachable");
+            document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-unreachable-text-visited");
+            setTimeout(() => {
+                alert("End Node not Reachable")
+            }, 1000);
+        }, ANIMATION_SPEED_MS * last_element);
+    }
+
+    const slow_count = endNodeReachable ? 0 : 1;
+
     //Signal that animation is done to make reset button available
     setTimeout(() => {
         setAnimateDone(true);
-    }, ANIMATION_SPEED_MS * animations.length + 200);
+    }, ANIMATION_SPEED_MS * animations.length + slow_count * SLOW_ANIMATION + 200);
 };
