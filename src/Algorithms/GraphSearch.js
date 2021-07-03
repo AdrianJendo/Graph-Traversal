@@ -36,6 +36,7 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
     return animations;
 };
 
+//Returns true if id is in arr
 const contains_id = (id, arr) => {
     for(let i = 0; i<arr.length; ++i){
         if(arr[i] === id){

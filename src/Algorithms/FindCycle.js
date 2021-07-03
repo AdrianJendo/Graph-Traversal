@@ -5,7 +5,7 @@ export const findCycle = (startNode, nodeList, arrowList, directed) => {
     const graph = getGraphLinkedList(nodeList, arrowList, directed);
 
     const visited_nodes = {}; //Dictionary used to give better performance (visited_nodes[cur.id] = 1) for checking if node is visited
-    const stack = {};
+    const stack = {}; //Used to keep track of nodes visited during depth first search from reference node
     const unvisited_nodes = [startNode.id];
     const unvisited_arrows = [];
     const animations = []; //Animations for both arrows and nodes <-- [{type:arrow/node, stage:seen/visited,id:ID}, ...]
@@ -19,6 +19,7 @@ export const findCycle = (startNode, nodeList, arrowList, directed) => {
     return [false, animations];
 };
 
+//depth first search from reference node (top of unvisted_nodes stack)
 const dfs = (graph, stack, visited_nodes, unvisited_nodes, unvisited_arrows, directed, animations) => {
     //Get current node id
     const cur_id = unvisited_nodes.pop(); //depth-first search
@@ -35,7 +36,6 @@ const dfs = (graph, stack, visited_nodes, unvisited_nodes, unvisited_arrows, dir
 
     for(let i = 0; i<graph[cur_id].length; ++i){ //Add unvisited nodes to list
         const neighbour = graph[cur_id][i].endID;
-        // debugger;
         if(!visited_nodes[neighbour]){
             unvisited_nodes.push(neighbour);
             unvisited_arrows.push(graph[cur_id][i]);

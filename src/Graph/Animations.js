@@ -32,6 +32,30 @@ const animateArrow = (cur_anim, i) => {
     }, (i+1) * ANIMATION_SPEED_MS);
 };
 
+const setNodeToVisitedWeight = (node_weights, animations, i) => {
+    document.getElementById(`node-${animations[i].id}`).classList.add("node-visited");
+    document.getElementById(`node-text-${animations[i].id}`).classList.add("node-text-visited");
+    const weightText = document.getElementById(`node-weight-${animations[i].id}`)
+    weightText.classList.add("node-weight-visited");
+    weightText.innerHTML = node_weights[animations[i].id] === 0 ? "Start" : node_weights[animations[i].id];
+};
+
+const setNodeUnreachable = (animations, i) => {
+    document.getElementById(`node-${animations[i].id}`).classList.add("node-unreachable");
+    document.getElementById(`node-text-${animations[i].id}`).classList.add("node-unreachable-text-visited");
+    const weightText = document.getElementById(`node-weight-${animations[i].id}`)
+    weightText.classList.add("node-weight-visited");
+    weightText.innerHTML = "Infinite";
+};
+
+const setNodeFinal = (node_weights, animations, i) => {
+    document.getElementById(`node-${animations[i].id}`).classList.add("node-cycle-found");
+    document.getElementById(`node-text-${animations[i].id}`).classList.add("node-cycle-found-text");
+    const weightText = document.getElementById(`node-weight-${animations[i].id}`)
+    weightText.classList.add("node-weight-visited");
+    weightText.innerHTML = node_weights[animations[i].id] === 0 ? "Start" : node_weights[animations[i].id];
+};
+
 //Animate graph traversals
 export const animateTraversal = (animations, setAnimateDone, find_cycle = []) => {
 
@@ -82,20 +106,12 @@ export const animateDijkstra = (animations, node_weights, setAnimateDone, endNod
     for(let i = 0; i<stopAt; ++i){
         if(animations[i].type === "node" && node_weights[animations[i].id] < Infinity){ //Animate node
             setTimeout(()=>{
-                document.getElementById(`node-${animations[i].id}`).classList.add("node-visited");
-                document.getElementById(`node-text-${animations[i].id}`).classList.add("node-text-visited");
-                const weightText = document.getElementById(`node-weight-${animations[i].id}`)
-                weightText.classList.add("node-weight-visited");
-                weightText.innerHTML = node_weights[animations[i].id] === 0 ? "Start" : node_weights[animations[i].id];
+                setNodeToVisitedWeight(node_weights, animations, i);
             }, i * ANIMATION_SPEED_MS);
         }
         else if(animations[i].type === "node") { //Unreached nodes
             setTimeout(()=>{
-                document.getElementById(`node-${animations[i].id}`).classList.add("node-unreachable");
-                document.getElementById(`node-text-${animations[i].id}`).classList.add("node-unreachable-text-visited");
-                const weightText = document.getElementById(`node-weight-${animations[i].id}`)
-                weightText.classList.add("node-weight-visited");
-                weightText.innerHTML = "Infinite";
+                setNodeUnreachable(animations, i);
             }, i * ANIMATION_SPEED_MS + slow_count * SLOW_ANIMATION);
             slow_count++;
         }
@@ -107,20 +123,12 @@ export const animateDijkstra = (animations, node_weights, setAnimateDone, endNod
     const last_element = animations.length - 1;
     if(endNode && endNodeReachable) {
         setTimeout(()=>{
-            document.getElementById(`node-${animations[last_element].id}`).classList.add("node-cycle-found");
-            document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-cycle-found-text");
-            const weightText = document.getElementById(`node-weight-${animations[last_element].id}`)
-            weightText.classList.add("node-weight-visited");
-            weightText.innerHTML = node_weights[animations[last_element].id] === 0 ? "Start" : node_weights[animations[last_element].id];
+            setNodeFinal(node_weights, animations, last_element);
         }, last_element * ANIMATION_SPEED_MS);
     }
     else if (endNode) {
         setTimeout(() => {
-            document.getElementById(`node-${animations[last_element].id}`).classList.add("node-unreachable");
-            document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-unreachable-text-visited");
-            const weightText = document.getElementById(`node-weight-${animations[last_element].id}`)
-            weightText.classList.add("node-weight-visited");
-            weightText.innerHTML = "Infinite";
+            setNodeUnreachable(animations, last_element);
             setTimeout(() => {
                 alert("End Node Not Reachable")
             }, 1000);
@@ -138,11 +146,7 @@ export const animateAStar = (animations, node_weights, endNodeReachable, setAnim
     for(let i = 0; i<animations.length-1; ++i){
         if(animations[i].type === "node"){ //Animate node
             setTimeout(()=>{
-                document.getElementById(`node-${animations[i].id}`).classList.add("node-visited");
-                document.getElementById(`node-text-${animations[i].id}`).classList.add("node-text-visited");
-                const weightText = document.getElementById(`node-weight-${animations[i].id}`)
-                weightText.classList.add("node-weight-visited");
-                weightText.innerHTML = node_weights[animations[i].id] === 0 ? "Start" : node_weights[animations[i].id];
+                setNodeToVisitedWeight(node_weights, animations, i);
             }, i * ANIMATION_SPEED_MS);
         }
         else if (animations[i].type === "arrow") { //Animate arrow
@@ -152,20 +156,12 @@ export const animateAStar = (animations, node_weights, endNodeReachable, setAnim
     const last_element = animations.length-1;
     if(endNodeReachable){
         setTimeout(()=>{
-            document.getElementById(`node-${animations[last_element].id}`).classList.add("node-cycle-found");
-            document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-cycle-found-text");
-            const weightText = document.getElementById(`node-weight-${animations[last_element].id}`)
-            weightText.classList.add("node-weight-visited");
-            weightText.innerHTML = node_weights[animations[last_element].id] === 0 ? "Start" : node_weights[animations[last_element].id];
+            setNodeFinal(node_weights, animations, last_element);
         }, last_element * ANIMATION_SPEED_MS);
     }
     else {
         setTimeout(() => {
-            document.getElementById(`node-${animations[last_element].id}`).classList.add("node-unreachable");
-            document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-unreachable-text-visited");
-            const weightText = document.getElementById(`node-weight-${animations[last_element].id}`)
-            weightText.classList.add("node-weight-visited");
-            weightText.innerHTML = "Infinite";
+            setNodeUnreachable(animations, last_element);
             setTimeout(() => {
                 alert("End Node Not Reachable")
             }, 1000);

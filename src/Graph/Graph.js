@@ -116,7 +116,6 @@ export function Graph() {
                     }
                 }
 
-                
                 //Remove arrows that are connected to node
                 const arrows_copy = arrows.slice();
                 i = 0;
@@ -138,7 +137,7 @@ export function Graph() {
                 setHoverNode(null);
                 setNodes(nodes_copy);
                 setArrows(arrows_copy);
-                //Don't use the arrows id anywhere so don't care about resetting
+                //Don't use the arrows id anywhere where order matters so don't need to reset
                 setNumNodes(numNodes - 1); 
             }
             else if(moveMode){ //Handle moving node
@@ -175,7 +174,6 @@ export function Graph() {
                 const breadthFirstSearch = algorithmType === 'breadth-first-search'
                 const animations = graphSearch(node, nodes, arrows, directed, breadthFirstSearch);
                 setAnimate(true);
-                console.log(animations);
                 animateTraversal(animations, setAnimateDone);
             }
             else if (algorithmType === 'find-cycle') {
@@ -192,7 +190,7 @@ export function Graph() {
                 if(animationStartNode && animationStartNode !== node.id){
                     const [node_weights, animations] = Dijkstra(animationStartNode, nodes, arrows, directed, node);
                     setAnimate(true);
-                    animateDijkstra(animations, node_weights, setAnimateDone ,true, node_weights[node.id] < Infinity);
+                    animateDijkstra(animations, node_weights, setAnimateDone, true, node_weights[node.id] < Infinity);
                 }
                 else if (!animationStartNode){
                     setAnimationStartNode(node);
