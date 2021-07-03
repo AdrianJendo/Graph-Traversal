@@ -29,23 +29,22 @@ export const graphSearch = (startNode, nodeList, arrowList, directed, breadthFir
         //visited_order.push(cur_id);
         visited_nodes[cur_id] = true; //push id of current node to visited_nodes and add animation
         
-        if(graph[cur_id].length){ //Check if there are connections at the current node
-            for(let i = 0; i<graph[cur_id].length; ++i){ //Add unvisited nodes to list
-                if(!visited_nodes[graph[cur_id][i].endID]){
-                    unvisited.push(graph[cur_id][i].endID);
-                    unvisited_arrows.push(graph[cur_id][i]);
-                }
-                else if (findCycle && graph[cur_id][i].arrowID !== last_adjacency.arrowID){ //Node seen was already visited, therefore there is cycle (handles undirected case)
-                    for(let j=0; j<graph[graph[cur_id][i].endID].length; ++j){
-                        const edge = graph[graph[cur_id][i].endID][j];
-                        if(visited_nodes[edge.endID]){
-                            //Animate arrow
-                            const edge = graph[cur_id][i]
-                            animations.push({type:"arrow", id:edge.arrowID, nodex1:edge.nodex1, nodex2:edge.nodex2, nodey1:edge.nodey1, nodey2:edge.nodey2});
-                            //Animate node (special animation)
-                            animations.push({type:"node", id: edge.endID});
-                            return [true, animations];
-                        }
+        for(let i = 0; i<graph[cur_id].length; ++i){ //Add unvisited nodes to list
+            const neighbour = graph[cur_id][i].endID;
+            if(!visited_nodes[neighbour]){
+                unvisited.push(neighbour);
+                unvisited_arrows.push(graph[cur_id][i]);
+            }
+            else if (findCycle && graph[cur_id][i].arrowID !== last_adjacency.arrowID){ //Node seen was already visited, therefore there is cycle (handles undirected case)
+                for(let j=0; j<graph[neighbour].length; ++j){
+                    const edge_neighbour = graph[neighbour][j];
+                    if(visited_nodes[edge_neighbour.endID]){
+                        //Animate arrow
+                        const edge = graph[cur_id][i];
+                        animations.push({type:"arrow", id:edge.arrowID, nodex1:edge.nodex1, nodex2:edge.nodex2, nodey1:edge.nodey1, nodey2:edge.nodey2});
+                        //Animate node (special animation)
+                        animations.push({type:"node", id: edge.endID});
+                        return [true, animations];
                     }
                 }
             }

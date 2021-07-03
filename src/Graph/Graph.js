@@ -1,7 +1,8 @@
 import "./Graph.css";
 import React, { useState } from "react";
 import {Sidebar} from "./Sidebar.js";
-import {findCycle, graphSearch} from "../Algorithms/GraphSearch";
+import {graphSearch} from "../Algorithms/GraphSearch";
+import {findCycle} from "../Algorithms/FindCycle";
 import {Dijkstra} from "../Algorithms/Dijkstra";
 import {AStar} from "../Algorithms/AStar";
 import {NODE_RADIUS, sortNodesArray, findNodeFromID, updateMovedNodeLinks, getAngle, getStartOffsets, getEndOffsets} from "./Helpers.js";
