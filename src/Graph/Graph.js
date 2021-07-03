@@ -175,6 +175,7 @@ export function Graph() {
                 const breadthFirstSearch = algorithmType === 'breadth-first-search'
                 const animations = graphSearch(node, nodes, arrows, directed, breadthFirstSearch);
                 setAnimate(true);
+                console.log(animations);
                 animateTraversal(animations, setAnimateDone);
             }
             else if (algorithmType === 'find-cycle') {
@@ -504,16 +505,18 @@ export function Graph() {
 
     //Clear graph of all nodes / arrows
     const clearGraph = () => {
-        setNodes([]);
-        setArrows([]);
-        setNumNodes(1);
-        setStartLineNode(null);
-        setNumArrows(1);
-        setAnimationArrow(null);
-        setDeleteMode(false);
-        setMoveMode(false);
-        setAnimationNode(null);
-        setOriginalNode(null);
+        if(window.confirm("Are you sure you want to delete your graph?")){
+            setNodes([]);
+            setArrows([]);
+            setNumNodes(1);
+            setStartLineNode(null);
+            setNumArrows(1);
+            setAnimationArrow(null);
+            setDeleteMode(false);
+            setMoveMode(false);
+            setAnimationNode(null);
+            setOriginalNode(null);
+        }
     }
 
     //Updates weight of arrow
