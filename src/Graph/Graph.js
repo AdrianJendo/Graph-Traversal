@@ -6,6 +6,7 @@ import {Dijkstra} from "../Algorithms/Dijkstra";
 import {AStar} from "../Algorithms/AStar";
 import {NODE_RADIUS, sortNodesArray, findNodeFromID, updateMovedNodeLinks, getAngle, getStartOffsets, getEndOffsets} from "./Helpers.js";
 import {animateTraversal, animateDijkstra, animateAStar} from "./Animations.js";
+import {DijkstraPopup} from "./DijkstraPopup"
 
 //Consts
 const LOCKED_MULTIPLIER = 1.44;
@@ -31,9 +32,10 @@ export function Graph() {
     const [weighted, setWeighted] = useState(false); //true if graph is weighted
     const [directed, setDirected] = useState(true); //true if graph is directed
     const [algorithmType, setAlgorithmType] = useState("");
-    const [animate, setAnimate] = useState(false);
-    const [animateDone, setAnimateDone] = useState(false);
-    const [animationStartNode, setAnimationStartNode] = useState(null); //start node for A* Algorithm
+    const [animate, setAnimate] = useState(false); //true if animation is currently in progress
+    const [animateDone, setAnimateDone] = useState(false); //true when animation finishing executing
+    const [animationStartNode, setAnimationStartNode] = useState(null); //start node for A* and Dijkstra Algorithm
+    const [popupOpen, setPopupOpen] = useState(false);
 
     const ARROW_WIDTH = weighted ? 11 : 8; //px
 
@@ -179,16 +181,29 @@ export function Graph() {
                 setAnimate(true);
                 animateTraversal(animations, setAnimateDone, [is_cycle]);
             }
-            else if (algorithmType === 'dijkstra') {
+            else if (algorithmType === 'dijkstraFull'){
                 const [node_weights, animations] = Dijkstra(node, nodes, arrows, directed);
                 setAnimate(true);
                 animateDijkstra(animations, node_weights, setAnimateDone);
             }
+            else if (algorithmType === 'dijkstraStartEnd') {
+                if(animationStartNode && animationStartNode !== node.id){
+                    const [node_weights, animations] = Dijkstra(animationStartNode, nodes, arrows, directed, node);
+                    setAnimate(true);
+                    animateDijkstra(animations, node_weights, setAnimateDone ,true, node_weights[node.id] < Infinity);
+                }
+                else if (!animationStartNode){
+                    setAnimationStartNode(node);
+                }
+                else {
+                    setAnimationStartNode(null);
+                }
+            }
             else if (algorithmType === "A*") {
                 if(animationStartNode && animationStartNode.id !== node.id){
-                    const [animations, endNodeReachable] = AStar(animationStartNode, node, nodes, arrows, directed);
+                    const [animations, node_weights, endNodeReachable] = AStar(animationStartNode, node, nodes, arrows, directed);
                     setAnimate(true);
-                    animateAStar(animations, endNodeReachable, setAnimateDone);
+                    animateAStar(animations, node_weights, endNodeReachable, setAnimateDone);
                     //Add another animation to show the path that was found
                 }
                 else if (!animationStartNode) {
@@ -552,7 +567,12 @@ export function Graph() {
     }
 
     const toggleStartAnimationNode = (type) => {
+        if(popupOpen){
+            togglePopup();
+        }
+
         setAnimationStartNode(null);
+
         if(type !== algorithmType){
             setAlgorithmType(type);
         }
@@ -582,6 +602,14 @@ export function Graph() {
         setAnimateDone(false);
         setHoverNode(null);
         setAnimationStartNode(null);
+    }
+
+    //Toggles popup menu
+    const togglePopup = () => {
+        if(algorithmType.indexOf("dijkstra") === -1){
+            if(!animate && !animateDone) setPopupOpen(!popupOpen);
+        }
+        setAlgorithmType("");
     }
 
 	return (
@@ -718,7 +746,7 @@ export function Graph() {
                             > 
                                 {node.id}
                             </text>
-                            {algorithmType === "dijkstra" && animate &&
+                            {(algorithmType.indexOf("dijkstra") !== -1 || algorithmType==="A*")&& animate &&
                                 <text 
                                     id={`node-weight-${node.id}`}
                                     x={node.x} 
@@ -791,10 +819,19 @@ export function Graph() {
                     toggleStartAnimationNode={toggleStartAnimationNode}
                     algorithmType={algorithmType}
                     is_animation={animate}
+                    dijkstraPopup={togglePopup}
+                    dijkstraPopupOpen={popupOpen}
             ></Sidebar>
 
-            {animateDone && 
+            {animateDone &&
                 <button className="animation-reset-button" onClick={handleGraphReset}>Reset</button>
+            }
+
+            {popupOpen &&
+                <DijkstraPopup
+                    handleClose={togglePopup}
+                    toggleStartAnimationNode={toggleStartAnimationNode}
+                ></DijkstraPopup>
             }
 		</div>
 	);

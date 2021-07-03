@@ -76,9 +76,10 @@ export const animateTraversal = (animations, setAnimateDone, find_cycle = []) =>
 };
 
 //Animate Dijsktra's Algorithm
-export const animateDijkstra = (animations, node_weights, setAnimateDone) => {
+export const animateDijkstra = (animations, node_weights, setAnimateDone, endNode = false, endNodeReachable=false) => {
     let slow_count = 0;
-    for(let i = 0; i<animations.length; ++i){
+    const stopAt = endNode ? animations.length - 1 : animations.length;
+    for(let i = 0; i<stopAt; ++i){
         if(animations[i].type === "node" && node_weights[animations[i].id] < Infinity){ //Animate node
             setTimeout(()=>{
                 document.getElementById(`node-${animations[i].id}`).classList.add("node-visited");
@@ -102,6 +103,30 @@ export const animateDijkstra = (animations, node_weights, setAnimateDone) => {
             animateArrow(animations[i], i);
         }
     }
+
+    const last_element = animations.length - 1;
+    if(endNode && endNodeReachable) {
+        setTimeout(()=>{
+            document.getElementById(`node-${animations[last_element].id}`).classList.add("node-cycle-found");
+            document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-cycle-found-text");
+            const weightText = document.getElementById(`node-weight-${animations[last_element].id}`)
+            weightText.classList.add("node-weight-visited");
+            weightText.innerHTML = node_weights[animations[last_element].id] === 0 ? "Start" : node_weights[animations[last_element].id];
+        }, last_element * ANIMATION_SPEED_MS);
+    }
+    else if (endNode) {
+        setTimeout(() => {
+            document.getElementById(`node-${animations[last_element].id}`).classList.add("node-unreachable");
+            document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-unreachable-text-visited");
+            const weightText = document.getElementById(`node-weight-${animations[last_element].id}`)
+            weightText.classList.add("node-weight-visited");
+            weightText.innerHTML = "Infinite";
+            setTimeout(() => {
+                alert("End Node Not Reachable")
+            }, 1000);
+        }, ANIMATION_SPEED_MS * last_element);
+    }
+
     //Signal that animation is done to make reset button available
     setTimeout(() => {
         setAnimateDone(true);
@@ -109,30 +134,38 @@ export const animateDijkstra = (animations, node_weights, setAnimateDone) => {
 };
 
 //Animate A* Algorithm
-export const animateAStar = (animations, endNodeReachable, setAnimateDone) => {
+export const animateAStar = (animations, node_weights, endNodeReachable, setAnimateDone) => {
     for(let i = 0; i<animations.length-1; ++i){
         if(animations[i].type === "node"){ //Animate node
             setTimeout(()=>{
                 document.getElementById(`node-${animations[i].id}`).classList.add("node-visited");
                 document.getElementById(`node-text-${animations[i].id}`).classList.add("node-text-visited");
+                const weightText = document.getElementById(`node-weight-${animations[i].id}`)
+                weightText.classList.add("node-weight-visited");
+                weightText.innerHTML = node_weights[animations[i].id] === 0 ? "Start" : node_weights[animations[i].id];
             }, i * ANIMATION_SPEED_MS);
         }
         else if (animations[i].type === "arrow") { //Animate arrow
             animateArrow(animations[i], i);
         }
     }
-    console.log(animations);
     const last_element = animations.length-1;
     if(endNodeReachable){
         setTimeout(()=>{
             document.getElementById(`node-${animations[last_element].id}`).classList.add("node-cycle-found");
             document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-cycle-found-text");
+            const weightText = document.getElementById(`node-weight-${animations[last_element].id}`)
+            weightText.classList.add("node-weight-visited");
+            weightText.innerHTML = node_weights[animations[last_element].id] === 0 ? "Start" : node_weights[animations[last_element].id];
         }, last_element * ANIMATION_SPEED_MS);
     }
     else {
         setTimeout(() => {
             document.getElementById(`node-${animations[last_element].id}`).classList.add("node-unreachable");
             document.getElementById(`node-text-${animations[last_element].id}`).classList.add("node-unreachable-text-visited");
+            const weightText = document.getElementById(`node-weight-${animations[last_element].id}`)
+            weightText.classList.add("node-weight-visited");
+            weightText.innerHTML = "Infinite";
             setTimeout(() => {
                 alert("End Node Not Reachable")
             }, 1000);

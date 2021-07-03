@@ -1,7 +1,7 @@
 import {getGraphLinkedList} from "./DataStructure";
 
 //Returns weights and animations of graph traversal using Dijkstra's Algorithm
-export const Dijkstra = (startNode, nodeList, arrowList, directed) => {
+export const Dijkstra = (startNode, nodeList, arrowList, directed, endNode=null) => {
     const graph = getGraphLinkedList(nodeList, arrowList, directed);
 
     const visited_nodes = [];
@@ -52,6 +52,10 @@ export const Dijkstra = (startNode, nodeList, arrowList, directed) => {
             
             animations.push({type:"arrow", id:edge_to_closest_node.arrowID, nodex1:edge_to_closest_node.nodex1, nodex2:edge_to_closest_node.nodex2, nodey1:edge_to_closest_node.nodey1, nodey2:edge_to_closest_node.nodey2});
             animations.push({type:"node", id: closest_node.id});
+
+            if(endNode && endNode.id === closest_node.id){
+                return [node_weights, animations];
+            }
             
             //Move closest node from unvisited to visited
             unvisited_nodes.splice(closest_node_index, 1);            
@@ -73,6 +77,10 @@ export const Dijkstra = (startNode, nodeList, arrowList, directed) => {
             } while(unvisited_nodes.length);
         }
     } while(unvisited_nodes.length); //|| closest_node.id === endNode.id (<- just add that to stop at end node for non-negative weights)
+
+    if(endNode !== null){
+        animations.push({type:"node", id:endNode.id});
+    }
 
     return [node_weights, animations];
 };

@@ -1,3 +1,4 @@
+/* Creates an opaque background that takes up the entire screen */
 .popup-box {
     position: fixed;
     background: #00000050;
@@ -9,14 +10,14 @@
   
 .box {
     position: relative;
-    width: 20%;
+    width: 35%;
     margin: 0 auto;
     height: auto;
     max-height: 70vh;
     margin-top: calc(100vh - 85vh - 20px);
     background: #fff;
     border-radius: 4px;
-    padding: 20px;
+    padding: 40px;
     border: 1px solid #999;
     overflow: auto;
 }
@@ -25,7 +26,7 @@
     content: "x";
     cursor: pointer;
     position: fixed;
-    right: calc(40% - 30px);
+    right: calc(30% - 8px);
     top: calc(100vh - 85vh - 33px);
     background: #ededed;
     width: 25px;
@@ -37,15 +38,31 @@
     font-size: 20px;
 }
 
-.column {
-    float: left;
-    width: 50%;
+/* Clear floats after the columns */
+.row {
+    display: flex;
+    justify-content: space-between;
+    margin-left: 30px;
+    margin-right: 30px;
 }
 
-/* Clear floats after the columns */
-.row:after {
-    content: "";
-    display: table;
-    clear: both;
+.popupButton {
+    background-color: #008CBA; /* Green */
+    border: 2px solid #008CBA;
+    color: white;
+    padding: 16px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    transition-duration: 0.4s;
+  }
+  
+.popupButton:hover {
+    background-color: white;
+    color: black;
 }
   

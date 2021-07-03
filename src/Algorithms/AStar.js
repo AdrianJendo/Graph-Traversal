@@ -64,7 +64,9 @@ export const AStar = (startNode, endNode, nodeList, arrowList, directed) => {
         animations.push({type:"node", id: current_node.id});
 
         if(current_node.id === endNode.id){
-            return [animations, true];
+            //Get the animations for going from start to end node
+
+            return [animations, gCosts, true];
         }
         
         //Check the neighbours of the current node
@@ -80,7 +82,7 @@ export const AStar = (startNode, endNode, nodeList, arrowList, directed) => {
     } while(Object.keys(openSet).length !== 0);
 
     animations.push({type:"node", id: endNode.id});
-    return [animations, false];
+    return [animations, gCosts, false];
 };
 
 //Gets hCosts of each node relative to end node (absolute distance) -- scaled based on width of canvas so that it more likely underestimates the actual cost (better accuracy, less performacne)
@@ -91,7 +93,6 @@ const getHCosts = (endNode, nodes) => {
         hCosts[id] = euclidianDistance(endNode, nodes[id-1]) / CONTAINER_WIDTH * bias; //the node with id is the (id-1)th index of nodes
     }
 
-    console.log(hCosts);
     return hCosts;
 }
 

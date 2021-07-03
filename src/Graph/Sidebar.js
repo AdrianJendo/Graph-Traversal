@@ -18,7 +18,9 @@ export function Sidebar(props) {
         handleChangeGraphType,
         toggleStartAnimationNode,
         algorithmType,
-        is_animation
+        is_animation,
+        dijkstraPopup,
+        dijkstraPopupOpen
     } = props;
 
     const [showPanel, setShowPanel] = useState(true);
@@ -66,10 +68,10 @@ export function Sidebar(props) {
                         </p>
                         <p 
                             className={`panel-element ${is_animation ? "panel-unclickable" : graphTypeMenu && !directed ? "graphTypeSelected" : ""}`}
-                            onClick={graphTypeMenu ? ()=>toggleDirected(false): drawGraph ? toggleDeleteMode : ()=>toggleStartAnimationNode("dijkstra")}
-                            style={graphTypeMenu ? {} : isDeleteMode || algorithmType === "dijkstra" ? {backgroundColor:"green"} : {}}
+                            onClick={graphTypeMenu ? ()=>toggleDirected(false): drawGraph ? toggleDeleteMode : dijkstraPopup} //toggleStartAnimationNode("dijkstra")
+                            style={graphTypeMenu ? {} : isDeleteMode || dijkstraPopupOpen || algorithmType.indexOf("dijkstra") !== -1 ? {backgroundColor:"green"} : {}}
                         >
-                            <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Delete Node/Link" : "Dijkstra's"}</span>
+                            <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Delete Node/Link" : "Dijkstra"}</span>
                             <span className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`}>Undirected</span>
                         </p>
                         <p 
