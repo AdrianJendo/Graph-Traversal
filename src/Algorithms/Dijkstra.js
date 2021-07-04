@@ -7,8 +7,6 @@ export const Dijkstra = (startNode, nodeList, arrowList, directed, endNode=null)
     const visited_nodes = [];
     const unvisited_nodes = nodeList.slice();
     const animations = []; //Animations for both arrows and nodes
-    
-
     const node_weights = {}; //dictionary of {id:weight, ...} pairs   
     const startNode_id = startNode.id;
     visited_nodes.push(startNode);
@@ -43,8 +41,9 @@ export const Dijkstra = (startNode, nodeList, arrowList, directed, endNode=null)
             let prev_cost = Infinity;
             visited_nodes.forEach(node => {
                 graph[node.id].forEach(edge => {
-                    if(edge.endID === closest_node.id && node_weights[node.id] < prev_cost){
-                        prev_cost = node_weights[node.id];
+                    const cost = node_weights[node.id] + edge.weight;
+                    if(edge.endID === closest_node.id && cost < prev_cost){
+                        prev_cost = cost;
                         edge_to_closest_node = edge;
                     }
                 });

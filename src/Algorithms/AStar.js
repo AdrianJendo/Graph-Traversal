@@ -30,17 +30,16 @@ https://en.wikipedia.org/wiki/A*_search_algorithm
 */
 
 
-export const AStar = (startNode, endNode, nodeList, arrowList, directed) => {
+export const AStar = (startNode, endNode, nodeList, arrowList, directed, weighted = false) => {
     const graph = getGraphLinkedList(nodeList, arrowList, directed);
     const startID = startNode.id;
     const animations = [];
     
     //Get hcosts
     const gCosts = getOtherCosts(startNode, nodeList); //minimum cost from start node to current node
-    const hCosts = getHCosts(endNode, nodeList); //(heuristic cost) estimated cost to the end from the current node
+    const hCosts = getHCosts(endNode, nodeList, weighted); //(heuristic cost) estimated cost to the end from the current node
     const fCosts = getOtherCosts(startNode, nodeList, hCosts[startID]); //sum of gcost and hcost
-
-    const closedSet = []; //visited nodes
+    const closedSet = {}; //visited nodes
     const openSet = {}; //reached but not yet visited nodes
     openSet[startID] = {node: startNode, prevNode: null};
 
@@ -49,7 +48,7 @@ export const AStar = (startNode, endNode, nodeList, arrowList, directed) => {
         const current_node_obj = findSmallestFCost(openSet, fCosts);
         const current_node = current_node_obj.node;
         const prev_node = current_node_obj.prevNode;
-        closedSet.push(openSet[current_node.id]);
+        closedSet[current_node.id] = true;
         delete openSet[current_node.id];
 
         //Find the visited node that connects to current closest node
@@ -65,14 +64,13 @@ export const AStar = (startNode, endNode, nodeList, arrowList, directed) => {
 
         if(current_node.id === endNode.id){
             //Get the animations for going from start to end node
-
             return [animations, gCosts, true];
         }
         
         //Check the neighbours of the current node
         graph[current_node.id].forEach(edge => {
             const gCost = gCosts[current_node.id] + edge.weight;
-            if(gCost < gCosts[edge.endID]) { // !closedSet[edge.endID] ||  gCost < closedSet[edge.endID].gCost
+            if(!closedSet[edge.endID] && gCost < gCosts[edge.endID]) {
                 gCosts[edge.endID] = gCost;
                 fCosts[edge.endID] = gCost + edge.weight*hCosts[edge.endID]; // Bigger weights will have their hCosts scaled more
                 openSet[edge.endID] = {node: nodeList[edge.endID-1], prevNode: current_node}; //If node already in openset, just override it
@@ -86,13 +84,12 @@ export const AStar = (startNode, endNode, nodeList, arrowList, directed) => {
 };
 
 //Gets hCosts of each node relative to end node (absolute distance) -- scaled based on width of canvas so that it more likely underestimates the actual cost (better accuracy, less performacne)
-const getHCosts = (endNode, nodes) => {
-    const bias = 3; //Aribitray value to scale hCost (larger values will be faster and less optimal for nodes with the same weight)
+const getHCosts = (endNode, nodes, weighted) => {
+    const bias = weighted ? 8 : 4; //Aribitray value to scale hCost (larger values will be faster and less optimal)
     const hCosts = {};
     for (let id = 1; id <= nodes.length; ++id) {
         hCosts[id] = euclidianDistance(endNode, nodes[id-1]) / CONTAINER_WIDTH * bias; //the node with id is the (id-1)th index of nodes
     }
-
     return hCosts;
 }
 

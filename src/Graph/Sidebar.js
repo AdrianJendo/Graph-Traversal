@@ -41,7 +41,8 @@ export function Sidebar(props) {
             <div className = {`sidebar ${showPanel ? 'open-panel' : 'close-panel'}`}>
                 <div>
                     <div className="panel panel-default">
-                        <p className="panel-element" onClick={graphTypeMenu ? toggleGraphTypeMenu : lockUnlock}>
+                        <p className={`panel-element ${is_animation ? "panel-unclickable" : ""}`}
+                            onClick={graphTypeMenu ? toggleGraphTypeMenu : lockUnlock}>
                             <span className={`panel-item ${graphTypeMenu ? "panel-item-open" : "panel-item-close"}`}>{drawGraph ? "Lock" : "Unlock"}</span>
                             <span 
                                 className={`dropdown-item ${graphTypeMenu ? "dropdown-item-open" : "dropdown-item-close"}`} 

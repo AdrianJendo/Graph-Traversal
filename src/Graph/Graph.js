@@ -201,10 +201,9 @@ export function Graph() {
             }
             else if (algorithmType === "A*") {
                 if(animationStartNode && animationStartNode.id !== node.id){
-                    const [animations, node_weights, endNodeReachable] = AStar(animationStartNode, node, nodes, arrows, directed);
+                    const [animations, node_weights, endNodeReachable] = AStar(animationStartNode, node, nodes, arrows, directed, weighted);
                     setAnimate(true);
                     animateAStar(animations, node_weights, endNodeReachable, setAnimateDone);
-                    //Add another animation to show the path that was found
                 }
                 else if (!animationStartNode) {
                     setAnimationStartNode(node);
