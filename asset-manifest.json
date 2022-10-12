@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/Graph-Traversal/static/css/main.c3ff95bc.chunk.css",
+    "main.js": "/Graph-Traversal/static/js/main.d30d63c7.chunk.js",
+    "main.js.map": "/Graph-Traversal/static/js/main.d30d63c7.chunk.js.map",
+    "runtime-main.js": "/Graph-Traversal/static/js/runtime-main.5e85f6c6.js",
+    "runtime-main.js.map": "/Graph-Traversal/static/js/runtime-main.5e85f6c6.js.map",
+    "static/js/2.b60d6759.chunk.js": "/Graph-Traversal/static/js/2.b60d6759.chunk.js",
+    "static/js/2.b60d6759.chunk.js.map": "/Graph-Traversal/static/js/2.b60d6759.chunk.js.map",
+    "static/js/3.af68181d.chunk.js": "/Graph-Traversal/static/js/3.af68181d.chunk.js",
+    "static/js/3.af68181d.chunk.js.map": "/Graph-Traversal/static/js/3.af68181d.chunk.js.map",
+    "index.html": "/Graph-Traversal/index.html",
+    "static/css/main.c3ff95bc.chunk.css.map": "/Graph-Traversal/static/css/main.c3ff95bc.chunk.css.map",
+    "static/js/2.b60d6759.chunk.js.LICENSE.txt": "/Graph-Traversal/static/js/2.b60d6759.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.5e85f6c6.js",
+    "static/js/2.b60d6759.chunk.js",
+    "static/css/main.c3ff95bc.chunk.css",
+    "static/js/main.d30d63c7.chunk.js"
+  ]
+}
